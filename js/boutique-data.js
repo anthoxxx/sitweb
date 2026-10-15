@@ -51,6 +51,13 @@ window.SKX_DATA = {
         "https://scdn.nrjaudio.fm/adwz2/fr/30001/mp3_128.mp3?origine=fluxradios",
         "https://streaming.nrjaudio.fm/oumvmk8fnozc"
       ]
+    },
+    {
+      "name": "Fun Radio",
+      "urls": [
+        "https://streamer-02.rtl.fr/fun-1-44-128",
+        "https://streamer-01.rtl.fr/fun-1-44-128"
+      ]
     }
   ],
   "products": [
