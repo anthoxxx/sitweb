@@ -1479,16 +1479,17 @@
     function setMuted(m) { prefs.muted = m; audio.muted = m; box.classList.toggle("muted", m); savePrefs(); }
     function play(station) {
       if (station) current = station;
-      if (!current || !current.urls || !current.urls.length) { setStatus("Aucune station", ""); return; }
+      if (!current || !current.urls || !current.urls.length) { setStatus("Aucune station", ""); return Promise.resolve(true); }
       urlIdx = urlIdx % current.urls.length;
       audio.src = current.urls[urlIdx];
       setStatus("Connexion", "loading");
       playing = true;
-      const pr = audio.play();
-      if (pr) pr.catch((err) => { if (err.name === "NotAllowedError") { setStatus("Appuie sur lecture", ""); playing = false; } });
+      const pr = audio.play() || Promise.resolve();
+      const result = pr.then(() => true, (err) => { if (err.name === "NotAllowedError") { setStatus("Appuie sur lecture", ""); playing = false; return false; } return true; });
       if ("mediaSession" in navigator && window.MediaMetadata) {
         navigator.mediaSession.metadata = new MediaMetadata({ title: current.name, artist: (S().shopName || "SKX") + " Radio", artwork: [{ src: "assets/favicon.png", sizes: "256x256", type: "image/png" }] });
       }
+      return result;
     }
     function stop() {
       playing = false;
@@ -1522,18 +1523,45 @@
         navigator.mediaSession.setActionHandler("pause", () => { if (playing) toggle(); });
       } catch {}
     }
-    // Les navigateurs bloquent la lecture automatique : la radio démarre au premier clic sur la page.
+    // La radio essaie de démarrer dès l'arrivée sur le site. Si le navigateur bloque le son
+    // automatique, un écran d'entrée propose d'entrer avec la radio (le clic débloque le son).
     const autoStart = (e) => {
-      document.removeEventListener("pointerdown", autoStart, true);
-      document.removeEventListener("keydown", autoStart, true);
-      if (e.target.closest && e.target.closest("#radio")) return;
+      removeAuto();
+      if (e.target.closest && e.target.closest("#radio, #entry")) return;
       if (prefs.want && !playing) { urlIdx = 0; play(); }
     };
-    document.addEventListener("pointerdown", autoStart, true);
-    document.addEventListener("keydown", autoStart, true);
-
+    const removeAuto = () => ["pointerdown", "keydown", "touchstart"].forEach((t) => document.removeEventListener(t, autoStart, true));
+    const addAuto = () => ["pointerdown", "keydown", "touchstart"].forEach((t) => document.addEventListener(t, autoStart, true));
+    function showEntry() {
+      const el = document.createElement("div");
+      el.id = "entry"; el.className = "entry"; el.setAttribute("role", "dialog"); el.setAttribute("aria-label", "Entrer sur SKX");
+      el.innerHTML = `<div class="entry-scene"></div>
+        <div class="entry-inner">
+          <img src="assets/logo-skx.png" alt="SKX" class="entry-logo">
+          <p class="entry-claim">${esc(S().slogan || "")}</p>
+          <button class="btn" id="entryGo">Entrer · ${esc(current?.name || "radio")}</button>
+          <button class="entry-mute" id="entryMute">Entrer sans le son</button>
+        </div>`;
+      document.body.appendChild(el);
+      window.SKXWeather.mountScene($(".entry-scene", el), "home", .8);
+      requestAnimationFrame(() => el.classList.add("show"));
+      const close = () => { session.set("skx_entered", 1); el.classList.remove("show"); setTimeout(() => el.remove(), 600); };
+      $("#entryGo", el).addEventListener("click", () => { removeAuto(); urlIdx = 0; play(); close(); });
+      $("#entryMute", el).addEventListener("click", () => { removeAuto(); close(); });
+      $("#entryGo", el).focus();
+    }
     fill(); setVolume(prefs.volume); setMuted(prefs.muted); box.classList.toggle("mini", prefs.mini);
-    setStatus(prefs.want ? "Radio · clique pour écouter" : "En pause", "");
+    if (prefs.want) {
+      addAuto();
+      urlIdx = 0;
+      play().then((ok) => {
+        if (ok) { removeAuto(); return; }
+        const inTeam = /^#\/(equipe|admin)/.test(location.hash);
+        if (!session.get("skx_entered") && !inTeam) showEntry();
+      });
+    }
+
+    if (!prefs.want) setStatus("En pause", "");
     return {
       reload() { const was = playing; if (was) stop(); fill(); if (was) play(); },
       playStation(s) { urlIdx = 0; play(clone(s)); toast("Écoute : " + s.name); }

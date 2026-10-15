@@ -410,6 +410,18 @@ button, input, select, textarea { font: inherit; color: inherit; }
 #volume { width: 110px; accent-color: var(--accent); cursor: pointer; }
 .vol-val { font-family: var(--mono); font-size: 11px; color: var(--muted); width: 24px; text-align: right; font-variant-numeric: tabular-nums; }
 
+/* Écran d'entrée (déclenche la radio) */
+.entry { position: fixed; inset: 0; z-index: 180; display: grid; place-items: center; background: var(--bg); opacity: 0; transition: opacity .6s; }
+.entry.show { opacity: 1; }
+.entry-scene { position: absolute; inset: 0; }
+.entry::after { content: ""; position: absolute; inset: 0; background: radial-gradient(ellipse at center, rgba(11,11,10,.35) 0%, rgba(11,11,10,.85) 80%); }
+.entry-inner { position: relative; z-index: 1; display: grid; gap: 18px; justify-items: center; text-align: center; padding: 24px; }
+.entry-logo { width: min(520px, 80vw); filter: drop-shadow(0 10px 40px rgba(0,0,0,.6)); }
+.entry-claim { margin: 0 0 8px; font-weight: 300; font-size: clamp(18px, 2.2vw, 26px); color: #f2f0ea; }
+.entry .btn { min-width: 260px; }
+.entry-mute { background: none; border: 0; color: var(--muted); font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; cursor: pointer; padding: 8px; }
+.entry-mute:hover { color: var(--text); }
+
 /* ---------- Footer ---------- */
 .footer { border-top: 1px solid var(--line); margin-top: 40px; padding: 56px var(--gutter) 24px; }
 .footer-grid { display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr 1.3fr; gap: 32px; max-width: 1320px; margin: 0 auto; }
