@@ -1,12 +1,15 @@
 # SKX — boutique de vêtements
 
-Site statique (HTML/CSS/JS, rien à installer) :
+Site statique (HTML/CSS/JS, rien à installer). SKX, pensé en 2014.
 
-- **4 univers animés** : Montagne (crêtes et neige), Terre (courbes de niveau), Pluie (averse et lumières de ville), Soleil (halo et chaleur)
-- **Boutique** : filtres, recherche, fiche produit avec composition et certifications, panier, commande
-- **Page Matières** publique : nos textiles certifiés et les règles du cahier des charges
-- **Radio en fond** : NRJ France et Fun Radio, lecture/pause, volume, muet
-- **Espace équipe** (`#/equipe`) avec comptes collaborateurs et rôles
+- **Homme, Femme, Enfants**, tailles XS à 3XL (filtres genre, zone, taille)
+- **5 zones** façon ascension en montagne, chacune avec son paysage animé : Streetwear (camp de base), Sport (col), 1ère classe (sommet), Accessoires (refuge), Cool (lac d'altitude)
+- **Histoire** : la marque racontée en slides (flèches, clavier, glisser sur mobile)
+- **L'équipe** : du fondateur aux collaborateurs
+- **Matières** : textiles certifiés et règles du cahier des charges
+- **Radio en fond** : NRJ France et Fun Radio
+- **Espace équipe** (`#/equipe`) : comptes collaborateurs et rôles, produits, zones, histoire, page équipe, matières, fiches techniques
+- Contact : contact-team@skx.fr
 
 ## Espace équipe
 
@@ -15,7 +18,7 @@ Première connexion : identifiant `admin`, mot de passe `skx2026`. Le site te de
 | Rôle | Accès |
 |---|---|
 | Admin | tout, y compris l'équipe et les réglages |
-| Gestion | produits, stock, univers, radio, commandes, fiches, matières |
+| Gestion | produits, stock, zones, histoire, page équipe, radio, commandes, fiches, matières |
 | Atelier | matières, fiches techniques, cahier des charges |
 | Lecture | consultation seule |
 

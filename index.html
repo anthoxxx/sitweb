@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>SKX</title>
-  <meta name="description" content="SKX : vêtements en matières biologiques et recyclées, en quatre univers — Montagne, Terre, Pluie, Soleil.">
+  <meta name="description" content="SKX, pensé en 2014 : vêtements Homme, Femme et Enfants du XS au 3XL. Streetwear, Sport, 1ère classe, Accessoires, Cool.">
   <meta name="theme-color" content="#0b0b0a">
   <link rel="icon" type="image/png" href="assets/favicon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -12,7 +12,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..800&family=JetBrains+Mono:wght@400;500&family=Pirata+One&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
 </head>
-<body data-univers="">
+<body data-zone="">
   <div class="grain" aria-hidden="true"></div>
   <div class="announce" id="announce"></div>
 
@@ -21,12 +21,18 @@
       <img src="assets/logo-skx-small.png" alt="SKX">
     </a>
     <nav class="nav" id="nav">
-      <a href="#/univers/montagne" data-route="montagne">Montagne</a>
-      <a href="#/univers/terre" data-route="terre">Terre</a>
-      <a href="#/univers/pluie" data-route="pluie">Pluie</a>
-      <a href="#/univers/soleil" data-route="soleil">Soleil</a>
-      <a href="#/boutique" data-route="boutique">Boutique</a>
-      <a href="#/matieres" data-route="matieres">Matières</a>
+      <a href="#/homme" data-route="homme">Homme</a>
+      <a href="#/femme" data-route="femme">Femme</a>
+      <a href="#/enfants" data-route="enfants">Enfants</a>
+      <span class="nav-sep" aria-hidden="true"></span>
+      <a href="#/zone/streetwear" data-route="streetwear">Streetwear</a>
+      <a href="#/zone/sport" data-route="sport">Sport</a>
+      <a href="#/zone/premiere" data-route="premiere">1ère classe</a>
+      <a href="#/zone/accessoires" data-route="accessoires">Accessoires</a>
+      <a href="#/zone/cool" data-route="cool">Cool</a>
+      <span class="nav-sep" aria-hidden="true"></span>
+      <a href="#/histoire" data-route="histoire">Histoire</a>
+      <a href="#/lequipe" data-route="lequipe">L'équipe</a>
     </nav>
     <div class="header-actions">
       <a href="#/equipe" class="h-btn" id="teamBtn" aria-label="Espace équipe" title="Espace équipe">
@@ -50,30 +56,34 @@
         <p id="footerSlogan"></p>
       </div>
       <div>
-        <h4>Univers</h4>
-        <a href="#/univers/montagne">Montagne</a>
-        <a href="#/univers/terre">Terre</a>
-        <a href="#/univers/pluie">Pluie</a>
-        <a href="#/univers/soleil">Soleil</a>
+        <h4>Boutique</h4>
+        <a href="#/homme">Homme</a>
+        <a href="#/femme">Femme</a>
+        <a href="#/enfants">Enfants</a>
+        <a href="#/boutique">Tout voir</a>
       </div>
       <div>
-        <h4>Maison</h4>
+        <h4>Zones</h4>
+        <a href="#/zone/streetwear">Streetwear</a>
+        <a href="#/zone/sport">Sport</a>
+        <a href="#/zone/premiere">1ère classe</a>
+        <a href="#/zone/accessoires">Accessoires</a>
+        <a href="#/zone/cool">Cool</a>
+      </div>
+      <div>
+        <h4>SKX</h4>
+        <a href="#/histoire">Histoire</a>
+        <a href="#/lequipe">L'équipe</a>
         <a href="#/matieres">Nos matières</a>
-        <a href="#/infos">Livraison et retours</a>
-        <a href="#/infos">Guide des tailles</a>
-        <a id="footerMail" href="#">Contact</a>
+        <a href="#/infos">Livraison, retours, tailles</a>
       </div>
       <div>
-        <h4>Newsletter</h4>
-        <p>Les drops en avant-première.</p>
-        <form class="newsletter" id="newsletter">
-          <input type="email" id="newsletterEmail" required placeholder="ton@email.fr" aria-label="Email">
-          <button class="btn btn-sm">S'inscrire</button>
-        </form>
+        <h4>Contact</h4>
+        <a class="contact-mail" href="mailto:contact-team@skx.fr">contact-team@skx.fr</a>
       </div>
     </div>
     <div class="footer-bottom">
-      <span>© <span id="year"></span> SKX</span>
+      <span>SKX © — pensé en <span id="founded">2014</span>. Tous droits réservés.</span>
       <a href="#/equipe">Espace équipe</a>
     </div>
     <p class="credit">Created by <strong>Anthony F</strong></p>

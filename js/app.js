@@ -40,8 +40,10 @@
   }
   const DEFAULT_PASSWORD = "skx2026";
 
-  const UNIVERS_IDS = ["montagne", "terre", "pluie", "soleil"];
-  const UTINT = { montagne: "#a9b8c2", terre: "#b9895c", pluie: "#7f97aa", soleil: "#d9a441" };
+  const ZONE_IDS = ["streetwear", "sport", "premiere", "accessoires", "cool"];
+  const UTINT = { streetwear: "#c9c6bd", sport: "#8fb4c9", premiere: "#d4a94f", accessoires: "#a39e93", cool: "#d0876a" };
+  const GENDERS = { homme: "Homme", femme: "Femme", enfant: "Enfants", mixte: "Mixte" };
+  const SIZES = ["XS", "S", "M", "L", "XL", "2XL", "3XL"];
   const TYPES = { tshirt: "T-shirt", hoodie: "Hoodie", veste: "Veste", pantalon: "Pantalon", casquette: "Casquette", bonnet: "Bonnet" };
   const TYPE_CODE = { tshirt: "TS", hoodie: "HD", veste: "JK", pantalon: "PT", casquette: "CP", bonnet: "BN" };
   const MAT_CATEGORIES = ["Tissu", "Bord-côte", "Doublure", "Rembourrage", "Fil à tricoter", "Fil", "Étiquette", "Accessoire", "Emballage"];
@@ -51,12 +53,12 @@
   const STATUSES = ["Prototype", "Validé", "En production", "Arrêté"];
   const NEAR_COUNTRIES = ["france", "portugal", "espagne", "italie", "allemagne", "belgique", "pays-bas", "autriche", "suisse", "grèce", "pologne", "roumanie", "bulgarie", "lituanie", "lettonie", "estonie", "république tchèque", "slovénie", "croatie", "hongrie", "slovaquie", "danemark", "suède", "irlande", "royaume-uni", "turquie", "maroc", "tunisie", "europe"];
   const ROLES = {
-    admin: { label: "Admin", desc: "Accès total, gère l'équipe", tabs: ["dashboard", "products", "specs", "materials", "charter", "univers", "radio", "orders", "team", "settings", "account"], publish: true },
-    gestion: { label: "Gestion", desc: "Boutique, stock, radio", tabs: ["dashboard", "products", "specs", "materials", "charter", "univers", "radio", "orders", "account"], publish: true },
+    admin: { label: "Admin", desc: "Accès total, gère l'équipe", tabs: ["dashboard", "products", "specs", "materials", "charter", "zones", "history", "people", "radio", "orders", "team", "settings", "account"], publish: true },
+    gestion: { label: "Gestion", desc: "Boutique, stock, radio", tabs: ["dashboard", "products", "specs", "materials", "charter", "zones", "history", "people", "radio", "orders", "account"], publish: true },
     atelier: { label: "Atelier", desc: "Matières et fiches techniques", tabs: ["dashboard", "specs", "materials", "charter", "account"], publish: true },
     lecture: { label: "Lecture", desc: "Consultation seule", tabs: ["dashboard", "products", "specs", "materials", "charter", "account"], publish: false, readOnly: true }
   };
-  const TAB_LABELS = { dashboard: "Tableau de bord", products: "Produits", specs: "Fiches techniques", materials: "Matières", charter: "Cahier des charges", univers: "Univers", radio: "Radio", orders: "Commandes", team: "Équipe", settings: "Réglages", account: "Mon compte" };
+  const TAB_LABELS = { dashboard: "Tableau de bord", products: "Produits", specs: "Fiches techniques", materials: "Matières", charter: "Cahier des charges", zones: "Zones", history: "Histoire", people: "Page équipe", radio: "Radio", orders: "Commandes", team: "Accès", settings: "Réglages", account: "Mon compte" };
 
   /* ---------- Données ---------- */
   let PUBLISHED = normalize(clone(window.SKX_DATA || {}));
@@ -66,14 +68,17 @@
   function normalize(d) {
     const base = window.SKX_DATA || {};
     d.settings = Object.assign({}, base.settings, d.settings);
-    d.univers = Object.assign({}, clone(base.univers || {}), d.univers);
-    for (const u of UNIVERS_IDS) d.univers[u] = Object.assign({ name: u, tagline: "", description: "", metric: "" }, (base.univers || {})[u], d.univers[u]);
+    d.zones = Object.assign({}, clone(base.zones || {}), d.zones);
+    for (const u of ZONE_IDS) d.zones[u] = Object.assign({ name: u, tagline: "", description: "", metric: "" }, (base.zones || {})[u], d.zones[u]);
+    d.history = d.history && Array.isArray(d.history.slides) ? d.history : clone(base.history || { intro: "", slides: [] });
+    d.people = Array.isArray(d.people) ? d.people : clone(base.people || []);
     d.stations = Array.isArray(d.stations) && d.stations.length ? d.stations : clone(base.stations || []);
     d.products = Array.isArray(d.products) ? d.products : [];
     d.materials = Array.isArray(d.materials) ? d.materials : clone(base.materials || []);
     d.charter = d.charter && Array.isArray(d.charter.rules) ? d.charter : clone(base.charter || { intro: "", rules: [] });
     d.team = Array.isArray(d.team) ? d.team : [];
-    d.products.forEach(ensureSpec);
+    d.products.forEach((p) => { ensureSpec(p); if (!ZONE_IDS.includes(p.zone)) p.zone = "streetwear"; if (!GENDERS[p.gender]) p.gender = "mixte"; delete p.univers; });
+    delete d.univers;
     return d;
   }
   function ensureSpec(p) {
@@ -150,7 +155,7 @@
   function productSVG(p, light = false) {
     const sh = SHAPES[p.type] || SHAPES.tshirt;
     const color = /^#[0-9a-f]{6}$/i.test(p.color) ? p.color : "#bbbbbb";
-    const tint = UTINT[p.univers] || "#888";
+    const tint = UTINT[p.zone] || "#888";
     const g = "g" + Math.random().toString(36).slice(2, 8);
     const stitchCol = lum(color) > .5 ? "rgba(0,0,0,.35)" : "rgba(255,255,255,.28)";
     const main = (p.spec?.components || []).map((c) => materialById(c.materialId)).find((m) => m && m.weight);
@@ -189,8 +194,8 @@
     document.title = s.shopName || "SKX";
     $("#announce").textContent = s.announcement || "";
     $("#footerSlogan").textContent = s.slogan || "";
-    $("#footerMail").href = s.contactEmail ? `mailto:${s.contactEmail}` : "#";
-    $("#year").textContent = new Date().getFullYear();
+    $("#founded").textContent = s.founded || "2014";
+    $$(".contact-mail").forEach((a) => { a.href = s.contactEmail ? `mailto:${s.contactEmail}` : "#"; a.textContent = s.contactEmail || ""; });
     const u = currentUser();
     $("#teamName").textContent = u ? u.name.split(" ")[0] : "";
   }
@@ -212,28 +217,24 @@
     $("#burger").setAttribute("aria-expanded", open);
   });
   $("#nav").addEventListener("click", (e) => { if (e.target.closest("a")) { $("#nav").classList.remove("open"); $("#burger").setAttribute("aria-expanded", false); } });
-  $("#newsletter").addEventListener("submit", (e) => {
-    e.preventDefault();
-    const list = store.get("skx_newsletter", []); list.push($("#newsletterEmail").value); store.set("skx_newsletter", list);
-    e.target.reset(); toast("Inscription enregistrée.");
-  });
+
 
   /* ---------- Cartes produits ---------- */
   function productCard(p) {
-    const u = DATA.univers[p.univers];
+    const u = DATA.zones[p.zone];
     const out = (+p.stock || 0) <= 0;
     const promo = p.oldPrice && +p.oldPrice > +p.price;
     return `<article class="card" data-product="${esc(p.id)}" tabindex="0">
       <div class="card-img">
         ${productVisual(p)}
-        ${u ? `<span class="tag"><span class="sw sw-${p.univers}"></span>${esc(u.name)}</span>` : ""}
+        ${u ? `<span class="tag"><span class="sw sw-${p.zone}"></span>${esc(u.name)}</span>` : ""}
         ${out ? `<span class="tag tag-r tag-out">Épuisé</span>` : promo ? `<span class="tag tag-r tag-promo">−${Math.round(100 - (p.price / p.oldPrice) * 100)} %</span>` : ""}
       </div>
       <div class="card-row">
         <h3>${esc(p.name)}</h3>
         <span class="price">${money(p.price)}${promo ? `<s>${money(p.oldPrice)}</s>` : ""}</span>
       </div>
-      <span class="sub">${esc(TYPES[p.type] || "")}${p.spec?.madeIn ? " · Fait en " + esc(p.spec.madeIn) : ""}</span>
+      <span class="sub">${esc(GENDERS[p.gender] || "")} · ${esc(TYPES[p.type] || "")}${p.spec?.madeIn ? " · Fait en " + esc(p.spec.madeIn) : ""}</span>
     </article>`;
   }
   const grid = (list) => list.length ? `<div class="grid">${list.map(productCard).join("")}</div>` : `<div class="empty">Aucun article pour le moment. Les prochains drops arrivent.</div>`;
@@ -246,14 +247,14 @@
     const sizes = p.sizes && p.sizes.length ? p.sizes : ["Unique"];
     let size = sizes.length === 1 ? sizes[0] : null, qty = 1;
     const stock = +p.stock || 0;
-    const u = DATA.univers[p.univers];
+    const u = DATA.zones[p.zone];
     const st = specStats(p);
     const visibleMats = st.materials.filter((m) => !["Fil", "Étiquette", "Accessoire", "Emballage"].includes(m.category));
     const box = openModal(`<div class="pdp">
       <div class="pdp-img">${productVisual(p)}</div>
       <div class="pdp-info">
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          ${u ? `<a href="#/univers/${p.univers}" data-close class="tag"><span class="sw sw-${p.univers}"></span>${esc(u.name)}</a>` : ""}
+          ${u ? `<a href="#/zone/${p.zone}" data-close class="tag"><span class="sw sw-${p.zone}"></span>${esc(u.name)}</a>` : ""}
           ${st.share !== null && st.share >= .9 ? `<span class="tag tag-bio">${num(st.share * 100)} % fibres certifiées</span>` : ""}
         </div>
         <h2>${esc(p.name)}</h2>
@@ -430,107 +431,195 @@
     return { avg, mats: DATA.materials.length, countries: countries.size, countryList: [...countries] };
   }
 
+  const zoneCard = (u, big) => {
+    const z = DATA.zones[u];
+    return `<a class="zone-card ${big ? "zone-big" : ""}" href="#/zone/${u}">
+      ${sceneDiv(u, .7)}
+      <span class="label metric">${esc(z.metric)}</span>
+      <div class="zone-body"><h3>${esc(z.name)}</h3><span class="tagline">${esc(z.tagline)}</span><span class="go">Entrer →</span></div>
+    </a>`;
+  };
+
   function pageHome() {
-    const U = DATA.univers, s = S();
+    const s = S();
     const featured = DATA.products.filter((p) => p.featured);
     const f = brandFacts();
-    const tick = [`<b>${esc(s.shopName)}</b> Matières bio et recyclées`, ...UNIVERS_IDS.map((u) => `<b>${esc(U[u].name)}</b> ${esc(U[u].metric)}`), `<b>${num(f.avg * 100)} %</b> fibres certifiées`, `<b>0</b> PFC`, `Fabriqué en ${esc(f.countryList.join(", "))}`];
+    const Z = DATA.zones;
+    const tick = [`<b>SKX</b> pensé en ${esc(s.founded || "2014")}`, ...ZONE_IDS.map((u) => `<b>${esc(Z[u].name)}</b> ${esc(Z[u].metric)}`), `<b>XS → 3XL</b> Homme, Femme, Enfants`, `<b>${num(f.avg * 100)} %</b> fibres certifiées`];
+    const slides = DATA.history.slides;
     app.innerHTML = `
-      <section class="hero">
-        <div class="hero-top">
+      <section class="hero-mt">
+        ${sceneDiv("home", 1)}
+        <div class="container hero-mt-inner">
+          <span class="label hero-alt">Alt. 0 m → 4 808 m · depuis ${esc(s.founded || "2014")}</span>
           <img class="hero-logo" src="assets/logo-skx.png" alt="${esc(s.shopName)}">
-          <div class="hero-side">
-            <h1>${esc(s.slogan)}</h1>
-            <p>Vêtements en coton biologique, chanvre et fibres recyclées, confectionnés en Europe.</p>
-            <a class="btn" href="#/boutique">Voir la collection</a>
+          <p class="hero-claim">${esc(s.slogan)}</p>
+          <div class="hero-cta">
+            <a class="btn" href="#/homme">Homme</a><a class="btn" href="#/femme">Femme</a><a class="btn" href="#/enfants">Enfants</a>
           </div>
         </div>
-        <div class="panels">${UNIVERS_IDS.map((u) => `
-          <a class="panel-u" href="#/univers/${u}">
-            ${sceneDiv(u, .7)}
-            <span class="label metric" style="color:rgba(242,240,234,.7)">${esc(U[u].metric)}</span>
-            <div class="panel-body"><h2>${esc(U[u].name)}</h2><span class="tagline">${esc(U[u].tagline)}</span><span class="go">Explorer →</span></div>
-          </a>`).join("")}</div>
       </section>
       <div class="ticker" aria-hidden="true"><div class="ticker-track">${[...tick, ...tick].map((t) => `<span>${t}</span>`).join("")}</div></div>
       <section class="section"><div class="container">
+        <div class="section-head"><div><span class="label">L'ascension</span><h2>Cinq zones</h2><p>Du camp de base au sommet : chaque zone de la boutique est une étape de la montagne SKX.</p></div></div>
+        <div class="zones">${ZONE_IDS.map((u, i) => zoneCard(u, i === 0)).join("")}</div>
+      </div></section>
+      <section class="section" style="padding-top:0"><div class="container">
         <div class="section-head"><div><h2>Sélection</h2><p>Les pièces phares de la saison.</p></div><a class="btn btn-ghost btn-sm" href="#/boutique">Toute la boutique</a></div>
-        ${grid(featured.length ? featured : DATA.products.slice(0, 8))}
+        ${grid((featured.length ? featured : DATA.products).slice(0, 8))}
       </div></section>
-      <section class="section" style="padding-top:0"><div class="container manifest">
-        <div style="display:grid;gap:20px;align-content:start">
-          <span class="label">Matières</span>
-          <h2>Chaque pièce <em>SKX</em> part d'un cahier des charges : fibres certifiées, teintures propres, ateliers proches.</h2>
-          <div><a class="btn btn-ghost btn-sm" href="#/matieres">Nos matières et nos règles</a></div>
+      ${slides.length ? `<section class="section" style="padding-top:0"><div class="container">
+        <div class="story-teaser">
+          <div style="display:grid;gap:14px;align-content:start"><span class="label">Histoire</span><h2 class="teaser-title">${esc(slides[0].year)} — ${esc(slides[0].title)}</h2><p class="muted" style="margin:0;max-width:52ch">${esc(slides[0].text)}</p>
+            <div><a class="btn btn-ghost btn-sm" href="#/histoire">Lire l'histoire</a></div></div>
+          <ol class="mini-timeline">${slides.map((sl) => `<li><span class="mono">${esc(sl.year)}</span><span>${esc(sl.title)}</span></li>`).join("")}</ol>
         </div>
-        <div class="facts">
-          <div class="fact"><b>${num(f.avg * 100)} %</b><span class="muted">de fibres bio ou recyclées certifiées, en moyenne par pièce</span></div>
-          <div class="fact"><b>${f.mats}</b><span class="muted">matières référencées et tracées</span></div>
-          <div class="fact"><b>0</b><span class="muted">PFC, métal lourd ou fibre synthétique vierge</span></div>
-          <div class="fact"><b>${f.countries}</b><span class="muted">pays de confection, tous en Europe</span></div>
-        </div>
-      </div></section>
+      </div></section>` : ""}
       <section class="section" style="padding-top:0"><div class="container perks">
+        <div class="perk"><b>Du XS au 3XL</b><span>Homme, Femme, Enfants</span></div>
         <div class="perk"><b>Livraison offerte</b><span>dès ${money(s.freeShippingFrom)} d'achat</span></div>
         <div class="perk"><b>Retours 30 jours</b><span>simples et gratuits</span></div>
-        <div class="perk"><b>Paiement sécurisé</b><span>carte, PayPal</span></div>
-        <div class="perk"><b>Radio en fond</b><span>NRJ, Fun Radio</span></div>
+        <div class="perk"><b>Matières certifiées</b><span><a class="link" href="#/matieres">bio et recyclées</a></span></div>
       </div></section>`;
     mountScenes();
   }
 
-  function pageUnivers(id) {
-    const u = DATA.univers[id];
-    if (!u) return pageNotFound();
-    document.body.dataset.univers = id;
-    const list = DATA.products.filter((p) => p.univers === id);
+  function pageZone(id) {
+    const z = DATA.zones[id];
+    if (!z) return pageNotFound();
+    document.body.dataset.zone = id;
+    const list = DATA.products.filter((p) => p.zone === id);
     app.innerHTML = `
       <section class="u-hero">
         ${sceneDiv(id)}
         <div class="container u-hero-content">
-          <div class="u-meta"><span class="label" style="color:rgba(242,240,234,.75)">${esc(u.metric)}</span><span class="label" style="color:rgba(242,240,234,.75)">${list.length} pièce${list.length > 1 ? "s" : ""}</span></div>
-          <h1>${esc(u.name)}</h1>
-          <div class="tagline">${esc(u.tagline)}</div>
-          <p class="desc">${esc(u.description)}</p>
+          <div class="u-meta"><span class="label">${esc(z.metric)}</span><span class="label">${list.length} pièce${list.length > 1 ? "s" : ""}</span></div>
+          <h1>${esc(z.name)}</h1>
+          <div class="tagline">${esc(z.tagline)}</div>
+          <p class="desc">${esc(z.description)}</p>
         </div>
       </section>
       <section class="section" style="padding-top:32px"><div class="container">
-        ${grid(list)}
-        <div class="u-switch"><span class="label" style="align-self:center;margin-right:8px">Autres univers</span>${UNIVERS_IDS.filter((x) => x !== id).map((x) => `<a class="chip" href="#/univers/${x}"><span class="sw sw-${x}"></span>${esc(DATA.univers[x].name)}</a>`).join("")}</div>
+        <div id="zoneShop"></div>
+        <div class="u-switch"><span class="label" style="align-self:center;margin-right:8px">Autres zones</span>${ZONE_IDS.filter((x) => x !== id).map((x) => `<a class="chip" href="#/zone/${x}"><span class="sw sw-${x}"></span>${esc(DATA.zones[x].name)}</a>`).join("")}</div>
       </div></section>`;
     mountScenes();
+    shopView($("#zoneShop"), { zone: id });
   }
 
-  const shopState = { u: "all", q: "", sort: "default" };
-  function pageShop() {
+  const shopState = { g: "all", u: "all", size: "", q: "", sort: "default" };
+  function pageShop(gender) {
+    if (gender) shopState.g = gender;
+    const title = gender ? GENDERS[gender] : "Boutique";
     app.innerHTML = `<section class="section"><div class="container">
-      <div class="section-head"><div><h2>Boutique</h2><p>${DATA.products.length} pièces, quatre univers.</p></div></div>
-      <div class="toolbar">
-        <button class="chip" data-u="all">Tout</button>
-        ${UNIVERS_IDS.map((u) => `<button class="chip" data-u="${u}"><span class="sw sw-${u}"></span>${esc(DATA.univers[u].name)}</button>`).join("")}
-        <span class="grow"></span>
-        <input type="search" id="shopQ" placeholder="Rechercher" value="${esc(shopState.q)}" aria-label="Rechercher">
-        <select id="shopSort" aria-label="Trier">
-          <option value="default">Sélection</option><option value="asc">Prix croissant</option><option value="desc">Prix décroissant</option><option value="name">Nom</option>
-        </select>
-      </div>
-      <div id="shopGrid"></div>
+      <div class="section-head"><div><h2>${esc(title)}</h2><p>Du XS au 3XL, cinq zones.</p></div></div>
+      <div id="shop"></div>
     </div></section>`;
-    $("#shopSort").value = shopState.sort;
+    shopView($("#shop"), {});
+  }
+  function shopView(el, fixed) {
+    const st = fixed.zone ? { g: shopState.g, u: fixed.zone, size: shopState.size, q: "", sort: shopState.sort } : shopState;
+    el.innerHTML = `<div class="toolbar">
+        <div class="seg" role="group" aria-label="Genre">${[["all", "Tous"], ["homme", "Homme"], ["femme", "Femme"], ["enfant", "Enfants"]].map(([k, v]) => `<button class="chip" data-g="${k}">${v}</button>`).join("")}</div>
+        ${fixed.zone ? "" : `<div class="seg" role="group" aria-label="Zone"><button class="chip" data-u="all">Toutes zones</button>${ZONE_IDS.map((u) => `<button class="chip" data-u="${u}"><span class="sw sw-${u}"></span>${esc(DATA.zones[u].name)}</button>`).join("")}</div>`}
+      </div>
+      <div class="toolbar">
+        <div class="seg" role="group" aria-label="Taille"><button class="chip" data-s="">Toutes tailles</button>${SIZES.map((x) => `<button class="chip" data-s="${x}">${x}</button>`).join("")}</div>
+        <span class="grow"></span>
+        ${fixed.zone ? "" : `<input type="search" id="shopQ" placeholder="Rechercher" value="${esc(st.q)}" aria-label="Rechercher">`}
+        <select id="shopSort" aria-label="Trier"><option value="default">Sélection</option><option value="asc">Prix croissant</option><option value="desc">Prix décroissant</option><option value="name">Nom</option></select>
+      </div>
+      <div class="shop-grid"></div>`;
+    $("#shopSort", el).value = st.sort;
     const render = () => {
-      $$(".toolbar .chip", app).forEach((c) => c.classList.toggle("active", c.dataset.u === shopState.u));
-      const q = shopState.q.trim().toLowerCase();
-      const list = DATA.products.filter((p) => (shopState.u === "all" || p.univers === shopState.u) &&
+      $$("[data-g]", el).forEach((c) => c.classList.toggle("active", c.dataset.g === st.g));
+      $$("[data-u]", el).forEach((c) => c.classList.toggle("active", c.dataset.u === st.u));
+      $$("[data-s]", el).forEach((c) => c.classList.toggle("active", c.dataset.s === st.size));
+      const q = st.q.trim().toLowerCase();
+      const list = DATA.products.filter((p) => (st.u === "all" || p.zone === st.u) &&
+        (st.g === "all" || p.gender === st.g || (p.gender === "mixte" && st.g !== "enfant")) &&
+        (!st.size || (p.sizes || []).includes(st.size) || (p.sizes || []).includes("Unique")) &&
         (!q || (p.name + " " + p.description + " " + (TYPES[p.type] || "")).toLowerCase().includes(q)));
-      if (shopState.sort === "asc") list.sort((a, b) => a.price - b.price);
-      if (shopState.sort === "desc") list.sort((a, b) => b.price - a.price);
-      if (shopState.sort === "name") list.sort((a, b) => a.name.localeCompare(b.name));
-      $("#shopGrid").innerHTML = grid(list);
+      if (st.sort === "asc") list.sort((a, b) => a.price - b.price);
+      if (st.sort === "desc") list.sort((a, b) => b.price - a.price);
+      if (st.sort === "name") list.sort((a, b) => a.name.localeCompare(b.name));
+      $(".shop-grid", el).innerHTML = grid(list);
     };
-    $(".toolbar", app).addEventListener("click", (e) => { const c = e.target.closest(".chip"); if (c) { shopState.u = c.dataset.u; render(); } });
-    $("#shopQ").addEventListener("input", (e) => { shopState.q = e.target.value; render(); });
-    $("#shopSort").addEventListener("change", (e) => { shopState.sort = e.target.value; render(); });
+    el.addEventListener("click", (e) => {
+      const c = e.target.closest(".chip"); if (!c) return;
+      if (c.dataset.g) st.g = c.dataset.g;
+      if (c.dataset.u) st.u = c.dataset.u;
+      if (c.dataset.s !== undefined) st.size = c.dataset.s;
+      if (!fixed.zone) Object.assign(shopState, st); else { shopState.g = st.g; shopState.size = st.size; }
+      render();
+    });
+    $("#shopQ", el)?.addEventListener("input", (e) => { st.q = e.target.value; render(); });
+    $("#shopSort", el).addEventListener("change", (e) => { st.sort = e.target.value; shopState.sort = st.sort; render(); });
     render();
+  }
+
+  /* Histoire en slides */
+  let slideIdx = 0;
+  function pageHistoire() {
+    const H = DATA.history, slides = H.slides;
+    if (!slides.length) { app.innerHTML = `<section class="section"><div class="container empty">L'histoire arrive bientôt.</div></section>`; return; }
+    slideIdx = Math.min(slideIdx, slides.length - 1);
+    app.innerHTML = `<section class="story">
+      ${sceneDiv("home", .6)}
+      <div class="container story-inner">
+        <div class="story-head"><span class="label">Histoire de la marque</span><p class="muted" style="margin:0">${esc(H.intro)}</p></div>
+        <div class="story-stage" id="stage" tabindex="0" aria-roledescription="carrousel" aria-label="Histoire SKX">
+          ${slides.map((sl, i) => `<article class="slide" data-i="${i}" aria-hidden="${i !== slideIdx}">
+            <div class="slide-year ${String(sl.year).length > 5 ? "long" : ""}">${esc(sl.year)}</div>
+            <div class="slide-body">
+              <span class="label">${String(i + 1).padStart(2, "0")} / ${String(slides.length).padStart(2, "0")}</span>
+              <h2>${esc(sl.title)}</h2>
+              <p>${esc(sl.text)}</p>
+              ${sl.image ? `<img src="${esc(sl.image)}" alt="" class="slide-img">` : ""}
+            </div>
+          </article>`).join("")}
+        </div>
+        <div class="story-nav">
+          <button class="icon-btn" id="prevSlide" aria-label="Précédent">←</button>
+          <div class="ridge-line" id="ridge">${slides.map((sl, i) => `<button class="ridge-pt" data-go="${i}" style="--h:${20 + Math.round((i / Math.max(1, slides.length - 1)) * 70)}%" aria-label="${esc(sl.year)} ${esc(sl.title)}"><span class="mono">${esc(sl.year)}</span></button>`).join("")}</div>
+          <button class="icon-btn" id="nextSlide" aria-label="Suivant">→</button>
+        </div>
+      </div>
+    </section>`;
+    mountScenes();
+    const show = (i) => {
+      slideIdx = (i + slides.length) % slides.length;
+      $$(".slide", app).forEach((s) => s.setAttribute("aria-hidden", +s.dataset.i !== slideIdx));
+      $$(".ridge-pt", app).forEach((b) => b.classList.toggle("active", +b.dataset.go <= slideIdx));
+      $$(".ridge-pt", app).forEach((b) => b.classList.toggle("current", +b.dataset.go === slideIdx));
+    };
+    show(slideIdx);
+    $("#prevSlide").addEventListener("click", () => show(slideIdx - 1));
+    $("#nextSlide").addEventListener("click", () => show(slideIdx + 1));
+    $("#ridge").addEventListener("click", (e) => { const b = e.target.closest("[data-go]"); if (b) show(+b.dataset.go); });
+    const onKey = (e) => {
+      if (!$("#stage")) return document.removeEventListener("keydown", onKey);
+      if (e.target.matches("input, textarea, select")) return;
+      if (e.key === "ArrowRight") show(slideIdx + 1);
+      if (e.key === "ArrowLeft") show(slideIdx - 1);
+    };
+    document.addEventListener("keydown", onKey);
+    let x0 = null;
+    $("#stage").addEventListener("touchstart", (e) => { x0 = e.touches[0].clientX; }, { passive: true });
+    $("#stage").addEventListener("touchend", (e) => { if (x0 === null) return; const dx = e.changedTouches[0].clientX - x0; if (Math.abs(dx) > 40) show(slideIdx + (dx < 0 ? 1 : -1)); x0 = null; });
+  }
+
+  /* L'équipe SKX (page publique) */
+  function pagePeople() {
+    const P = DATA.people;
+    app.innerHTML = `<section class="section"><div class="container">
+      <div class="section-head"><div><span class="label">Du fondateur aux collaborateurs</span><h2>L'équipe SKX</h2><p>Les personnes qui pensent, dessinent et fabriquent SKX.</p></div></div>
+      ${P.length ? `<div class="people">${P.map((m, i) => `<article class="person ${i === 0 ? "person-lead" : ""}">
+        <div class="person-photo">${m.photo ? `<img src="${esc(m.photo)}" alt="${esc(m.name)}">` : `<div class="js-scene" data-scene="${ZONE_IDS[i % ZONE_IDS.length]}" data-density=".4"></div><span class="person-initials">${esc(m.name.split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase())}</span>`}</div>
+        <div class="person-body"><span class="label">${esc(m.title)}${m.since ? " · depuis " + esc(m.since) : ""}</span><h3>${esc(m.name)}</h3><p>${esc(m.bio)}</p></div>
+      </article>`).join("")}</div>` : `<div class="empty">L'équipe sera présentée ici.</div>`}
+    </div></section>`;
+    mountScenes();
   }
 
   function pageMatieres() {
@@ -750,16 +839,16 @@
   function tabProducts(el) {
     el.innerHTML = `${publishNotice()}
       <div class="toolbar"><button class="btn btn-sm" id="newProduct">Nouveau produit</button><span class="grow"></span>
-        <select id="admFilter" data-ro-ok aria-label="Filtrer"><option value="all">Tous les univers</option>${UNIVERS_IDS.map((u) => `<option value="${u}">${esc(DATA.univers[u].name)}</option>`).join("")}</select></div>
+        <select id="admFilter" data-ro-ok aria-label="Filtrer"><option value="all">Toutes les zones</option>${ZONE_IDS.map((u) => `<option value="${u}">${esc(DATA.zones[u].name)}</option>`).join("")}</select></div>
       <div class="table-wrap"><table class="table">
-        <thead><tr><th></th><th>Produit</th><th>Univers</th><th class="num">Prix</th><th class="num">Stock</th><th>Vedette</th><th></th></tr></thead>
+        <thead><tr><th></th><th>Produit</th><th>Zone</th><th class="num">Prix</th><th class="num">Stock</th><th>Vedette</th><th></th></tr></thead>
         <tbody id="admRows"></tbody></table></div>`;
     const rows = () => {
       const f = $("#admFilter").value;
-      $("#admRows").innerHTML = DATA.products.filter((p) => f === "all" || p.univers === f).map((p) => `<tr>
+      $("#admRows").innerHTML = DATA.products.filter((p) => f === "all" || p.zone === f).map((p) => `<tr>
         <td><div class="thumb">${productVisual(p)}</div></td>
         <td><b style="font-weight:500">${esc(p.name)}</b><div class="label" style="margin-top:2px">${esc(TYPES[p.type] || p.type)} · ${esc((p.sizes || []).join(" "))}</div></td>
-        <td><span class="tag" style="background:none"><span class="sw sw-${p.univers}"></span>${esc(DATA.univers[p.univers]?.name || p.univers)}</span></td>
+        <td><span class="tag" style="background:none"><span class="sw sw-${p.zone}"></span>${esc(DATA.zones[p.zone]?.name || p.zone)}</span></td>
         <td class="num">${money(p.price)}</td>
         <td class="num"><input class="input" type="number" min="0" value="${+p.stock || 0}" data-stock="${esc(p.id)}" style="width:76px;padding:6px 8px;text-align:right" aria-label="Stock"></td>
         <td><input type="checkbox" ${p.featured ? "checked" : ""} data-feat="${esc(p.id)}" aria-label="Vedette"></td>
@@ -789,13 +878,14 @@
 
   function editProduct(id) {
     const existing = id ? productById(id) : null;
-    const p = existing ? clone(existing) : ensureSpec({ id: uid("p"), name: "", univers: "montagne", type: "tshirt", color: "#c9c4b8", price: 35, oldPrice: null, sizes: ["S", "M", "L", "XL"], stock: 10, image: "", featured: false, description: "" });
+    const p = existing ? clone(existing) : ensureSpec({ id: uid("p"), name: "", zone: "streetwear", gender: "mixte", type: "tshirt", color: "#c9c4b8", price: 35, oldPrice: null, sizes: SIZES.slice(), stock: 10, image: "", featured: false, description: "" });
     const box = openModal(`<div class="modal-pad">
       <h2>${existing ? "Modifier le produit" : "Nouveau produit"}</h2>
       <form class="form" id="pForm" style="margin-top:18px">
         <label><span>Nom</span><input id="pf-name" name="name" required value="${esc(p.name)}"></label>
-        <div class="row">
-          <label><span>Univers</span><select id="pf-univers" name="univers">${UNIVERS_IDS.map((u) => `<option value="${u}" ${u === p.univers ? "selected" : ""}>${esc(DATA.univers[u].name)}</option>`).join("")}</select></label>
+        <div class="row3">
+          <label><span>Zone</span><select id="pf-zone" name="zone">${ZONE_IDS.map((u) => `<option value="${u}" ${u === p.zone ? "selected" : ""}>${esc(DATA.zones[u].name)}</option>`).join("")}</select></label>
+          <label><span>Genre</span><select id="pf-gender" name="gender">${Object.entries(GENDERS).map(([k, v]) => `<option value="${k}" ${k === p.gender ? "selected" : ""}>${v}</option>`).join("")}</select></label>
           <label><span>Type</span><select id="pf-type" name="type">${Object.entries(TYPES).map(([k, v]) => `<option value="${k}" ${k === p.type ? "selected" : ""}>${v}</option>`).join("")}</select></label>
         </div>
         <div class="row3">
@@ -820,7 +910,7 @@
     const form = $("#pForm", box);
     const read = () => {
       const f = Object.fromEntries(new FormData(form));
-      p.name = f.name.trim(); p.univers = f.univers; p.type = f.type; p.color = f.color;
+      p.name = f.name.trim(); p.zone = f.zone; p.gender = f.gender; p.type = f.type; p.color = f.color;
       p.price = Math.max(0, +f.price || 0); p.oldPrice = f.oldPrice ? +f.oldPrice : null;
       p.sizes = f.sizes.split(",").map((s) => s.trim()).filter(Boolean); if (!p.sizes.length) p.sizes = ["Unique"];
       p.stock = Math.max(0, parseInt(f.stock) || 0); p.description = f.description.trim(); p.featured = !!f.featured;
@@ -885,7 +975,7 @@
     const p = clone(original); ensureSpec(p);
     const ro = role().readOnly;
     const box = openModal(`<div class="modal-pad">
-      <span class="label">Fiche technique · ${esc(TYPES[p.type] || "")} · ${esc(DATA.univers[p.univers]?.name || "")}</span>
+      <span class="label">Fiche technique · ${esc(TYPES[p.type] || "")} · ${esc(DATA.zones[p.zone]?.name || "")}</span>
       <h2 style="margin-top:6px">${esc(p.name)}</h2>
       <div id="specKpis" style="margin:18px 0"></div>
       <form class="form" id="specForm">
@@ -962,7 +1052,7 @@
     return `<div class="sheet">
       <div class="head">
         <div><span class="label">Fiche technique</span><h1>${esc(p.name)}</h1>
-          <div class="label" style="margin-top:6px">${esc(TYPES[p.type] || "")} · ${esc(DATA.univers[p.univers]?.name || "")} · Réf. ${esc(p.id)} · ${esc(p.spec.status)}</div></div>
+          <div class="label" style="margin-top:6px">${esc(TYPES[p.type] || "")} · ${esc(DATA.zones[p.zone]?.name || "")} · Réf. ${esc(p.id)} · ${esc(p.spec.status)}</div></div>
         <img src="assets/logo-skx-small.png" alt="SKX">
       </div>
       <div class="cols">
@@ -1113,20 +1203,81 @@
     </div>`;
   }
 
-  /* --- Univers --- */
-  function tabUnivers(el) {
-    el.innerHTML = publishNotice() + UNIVERS_IDS.map((u) => {
-      const x = DATA.univers[u];
+  /* --- Zones --- */
+  function tabZones(el) {
+    el.innerHTML = publishNotice() + ZONE_IDS.map((u) => {
+      const x = DATA.zones[u];
       return `<div class="box"><h3><span class="sw sw-${u}" style="margin-right:8px"></span>${esc(x.name)}</h3>
         <form class="form" data-uform="${u}">
-          <div class="row3"><label><span>Nom affiché</span><input id="u-${u}-name" name="name" value="${esc(x.name)}"></label><label><span>Accroche</span><input id="u-${u}-tag" name="tagline" value="${esc(x.tagline)}"></label><label><span>Repère</span><input id="u-${u}-metric" name="metric" value="${esc(x.metric)}"></label></div>
-          <label><span>Description</span><textarea id="u-${u}-desc" name="description">${esc(x.description)}</textarea></label>
+          <div class="row3"><label><span>Nom affiché</span><input id="z-${u}-name" name="name" value="${esc(x.name)}"></label><label><span>Accroche</span><input id="z-${u}-tag" name="tagline" value="${esc(x.tagline)}"></label><label><span>Repère montagne</span><input id="z-${u}-metric" name="metric" value="${esc(x.metric)}"></label></div>
+          <label><span>Description</span><textarea id="z-${u}-desc" name="description">${esc(x.description)}</textarea></label>
           <button class="btn btn-sm" style="justify-self:start">Enregistrer</button>
         </form></div>`;
     }).join("");
     $$("[data-uform]", el).forEach((f) => f.addEventListener("submit", (e) => {
-      e.preventDefault(); Object.assign(DATA.univers[f.dataset.uform], Object.fromEntries(new FormData(f))); saveDraft(); toast("Univers enregistré."); pageTeam();
+      e.preventDefault(); Object.assign(DATA.zones[f.dataset.uform], Object.fromEntries(new FormData(f))); saveDraft(); toast("Zone enregistrée."); pageTeam();
     }));
+  }
+
+  /* --- Histoire --- */
+  function tabHistory(el) {
+    const H = clone(DATA.history);
+    el.innerHTML = `${publishNotice()}
+      <div class="notice info">Chaque bloc est une slide de la page Histoire, dans l'ordre. Le repère peut être une année ou un mot court.</div>
+      <div class="box"><label class="form"><span class="label">Introduction</span><input class="input" id="hIntro" value="${esc(H.intro)}"></label></div>
+      <div id="hSlides"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" id="hAdd">Ajouter une slide</button><button class="btn btn-sm" id="hSave">Enregistrer</button><a class="btn btn-ghost btn-sm" href="#/histoire" data-ro-ok>Voir la page</a></div>`;
+    const render = () => {
+      $("#hSlides").innerHTML = H.slides.map((sl, i) => `<div class="box form" data-i="${i}">
+        <div class="row3" style="grid-template-columns:160px 1fr auto"><label><span>Repère</span><input data-k="year" value="${esc(sl.year)}"></label><label><span>Titre</span><input data-k="title" value="${esc(sl.title)}"></label>
+          <div style="display:flex;gap:6px;align-self:end"><button class="icon-btn" data-up="${i}" ${i ? "" : "disabled"} aria-label="Monter">↑</button><button class="icon-btn" data-rm="${i}" aria-label="Supprimer">✕</button></div></div>
+        <label><span>Texte</span><textarea data-k="text">${esc(sl.text)}</textarea></label>
+        <label><span>Image <span class="hint">optionnel, lien ou assets/…</span></span><input data-k="image" value="${esc(sl.image || "")}"></label>
+      </div>`).join("");
+      if (role().readOnly) lockReadOnly($("#hSlides"));
+    };
+    render();
+    $("#hSlides").addEventListener("input", (e) => { const b = e.target.closest("[data-i]"); if (b && e.target.dataset.k) H.slides[+b.dataset.i][e.target.dataset.k] = e.target.value; });
+    $("#hSlides").addEventListener("click", (e) => {
+      const up = e.target.closest("[data-up]"), rm = e.target.closest("[data-rm]");
+      if (up) { const i = +up.dataset.up; H.slides.splice(i - 1, 0, H.slides.splice(i, 1)[0]); render(); }
+      if (rm && confirm("Supprimer cette slide ?")) { H.slides.splice(+rm.dataset.rm, 1); render(); }
+    });
+    $("#hIntro").addEventListener("input", (e) => { H.intro = e.target.value; });
+    $("#hAdd").addEventListener("click", () => { H.slides.push({ year: "", title: "", text: "", image: "" }); render(); });
+    $("#hSave").addEventListener("click", () => { H.slides = H.slides.filter((x) => x.title.trim() || x.text.trim()); DATA.history = H; saveDraft(); toast("Histoire enregistrée."); pageTeam(); });
+  }
+
+  /* --- Page équipe (publique) --- */
+  function tabPeople(el) {
+    const P = clone(DATA.people);
+    el.innerHTML = `${publishNotice()}
+      <div class="notice info">Les personnes présentées sur la page publique « L'équipe ». C'est indépendant des accès à l'espace équipe. La première personne est mise en avant.</div>
+      <div id="pList"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" id="pAdd">Ajouter une personne</button><button class="btn btn-sm" id="pSave">Enregistrer</button><a class="btn btn-ghost btn-sm" href="#/lequipe" data-ro-ok>Voir la page</a></div>`;
+    const render = () => {
+      $("#pList").innerHTML = P.map((m, i) => `<div class="box form" data-i="${i}">
+        <div class="row3" style="grid-template-columns:1fr 1fr 120px auto"><label><span>Nom</span><input data-k="name" value="${esc(m.name)}"></label><label><span>Rôle affiché</span><input data-k="title" value="${esc(m.title)}" placeholder="Fondateur, Designer, Atelier…"></label><label><span>Depuis</span><input data-k="since" value="${esc(m.since || "")}"></label>
+          <div style="display:flex;gap:6px;align-self:end"><button class="icon-btn" data-up="${i}" ${i ? "" : "disabled"} aria-label="Monter">↑</button><button class="icon-btn" data-rm="${i}" aria-label="Retirer">✕</button></div></div>
+        <label><span>Présentation</span><textarea data-k="bio">${esc(m.bio)}</textarea></label>
+        <div style="display:flex;gap:8px;align-items:end;flex-wrap:wrap"><label style="flex:1;min-width:200px"><span>Photo <span class="hint">lien ou assets/…</span></span><input data-k="photo" value="${esc(m.photo && m.photo.startsWith("data:") ? "" : m.photo || "")}"></label>
+          <label class="btn btn-ghost btn-sm" style="cursor:pointer">Importer une photo<input type="file" accept="image/*" data-file="${i}" hidden></label></div>
+      </div>`).join("");
+      if (role().readOnly) lockReadOnly($("#pList"));
+    };
+    render();
+    $("#pList").addEventListener("input", (e) => { const b = e.target.closest("[data-i]"); if (b && e.target.dataset.k) P[+b.dataset.i][e.target.dataset.k] = e.target.value; });
+    $("#pList").addEventListener("change", async (e) => {
+      const f = e.target.closest("[data-file]"); if (!f || !f.files[0]) return;
+      try { P[+f.dataset.file].photo = await resizeImage(f.files[0], 700); toast("Photo importée."); } catch { toast("Impossible de lire cette image."); }
+    });
+    $("#pList").addEventListener("click", (e) => {
+      const up = e.target.closest("[data-up]"), rm = e.target.closest("[data-rm]");
+      if (up) { const i = +up.dataset.up; P.splice(i - 1, 0, P.splice(i, 1)[0]); render(); }
+      if (rm && confirm("Retirer cette personne de la page ?")) { P.splice(+rm.dataset.rm, 1); render(); }
+    });
+    $("#pAdd").addEventListener("click", () => { P.push({ id: uid("pp"), name: "", title: "", bio: "", photo: "", since: "" }); render(); });
+    $("#pSave").addEventListener("click", () => { DATA.people = P.filter((m) => m.name.trim()); saveDraft(); toast("Page équipe enregistrée."); pageTeam(); });
   }
 
   /* --- Radio --- */
@@ -1281,6 +1432,7 @@
     el.innerHTML = `${publishNotice()}
       <div class="box"><h3>Boutique</h3><form class="form" id="setForm">
         <div class="row"><label><span>Nom de la boutique</span><input id="st-name" name="shopName" value="${esc(s.shopName)}"></label><label><span>Slogan</span><input id="st-slogan" name="slogan" value="${esc(s.slogan)}"></label></div>
+        <label><span>Année de création</span><input id="st-founded" name="founded" value="${esc(s.founded || "")}"></label>
         <label><span>Bandeau d'annonce</span><input id="st-ann" name="announcement" value="${esc(s.announcement)}"></label>
         <div class="row"><label><span>Email de contact <span class="hint">reçoit les commandes</span></span><input id="st-mail" type="email" name="contactEmail" value="${esc(s.contactEmail)}"></label>
           <label><span>Lien de paiement <span class="hint">Stripe, PayPal.me, SumUp…</span></span><input id="st-pay" name="paymentLink" value="${esc(s.paymentLink)}" placeholder="https://"></label></div>
@@ -1297,7 +1449,7 @@
     });
   }
 
-  const TABS = { dashboard: tabDashboard, products: tabProducts, specs: tabSpecs, materials: tabMaterials, charter: tabCharter, univers: tabUnivers, radio: tabRadio, orders: tabOrders, team: tabTeam, settings: tabSettings, account: tabAccount };
+  const TABS = { dashboard: tabDashboard, products: tabProducts, specs: tabSpecs, materials: tabMaterials, charter: tabCharter, zones: tabZones, history: tabHistory, people: tabPeople, radio: tabRadio, orders: tabOrders, team: tabTeam, settings: tabSettings, account: tabAccount };
 
   /* ================= RADIO ================= */
   const radio = (() => {
@@ -1392,13 +1544,18 @@
   function route() {
     const h = location.hash.replace(/^#\/?/, "");
     window.SKXWeather.destroyAll();
-    document.body.dataset.univers = "";
+    document.body.dataset.zone = "";
     closeModal();
     const [page, arg] = h.split("/");
-    $$("#nav a").forEach((a) => a.classList.toggle("active", a.dataset.route === (page === "univers" ? arg : page)));
+    $$("#nav a").forEach((a) => a.classList.toggle("active", a.dataset.route === (page === "zone" ? arg : page)));
     if (!page) pageHome();
-    else if (page === "univers") pageUnivers(arg);
-    else if (page === "boutique") pageShop();
+    else if (page === "zone") pageZone(arg);
+    else if (page === "boutique") { shopState.g = "all"; pageShop(); }
+    else if (page === "homme") pageShop("homme");
+    else if (page === "femme") pageShop("femme");
+    else if (page === "enfants") pageShop("enfant");
+    else if (page === "histoire") pageHistoire();
+    else if (page === "lequipe") pagePeople();
     else if (page === "matieres") pageMatieres();
     else if (page === "infos") pageInfos();
     else if (page === "equipe" || page === "admin") pageTeam();
