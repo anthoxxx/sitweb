@@ -1,28 +1,46 @@
 # SKX — boutique de vêtements
 
-Site e-commerce statique (HTML/CSS/JS, aucune installation) avec :
+Site statique (HTML/CSS/JS, rien à installer) :
 
-- **4 univers animés** : Montagne (neige), Terre (poussière), Pluie (averse + éclairs), Soleil (rayons)
-- **Boutique** : filtres par univers, recherche, tri, fiche produit avec tailles, panier, commande
-- **Radio en fond** (NRJ France par défaut) : lecture/pause, volume +/−, curseur, muet, réduire le lecteur. Elle continue pendant la navigation et démarre au premier clic (les navigateurs interdisent la lecture automatique).
-- **Espace admin** (`#/admin`, lien en bas de page) : produits (ajout, modif, photos, stock, promo), textes des univers, stations radio, réglages, mot de passe.
+- **4 univers animés** : Montagne (crêtes et neige), Terre (courbes de niveau), Pluie (averse et lumières de ville), Soleil (halo et chaleur)
+- **Boutique** : filtres, recherche, fiche produit avec composition et certifications, panier, commande
+- **Page Matières** publique : nos textiles certifiés et les règles du cahier des charges
+- **Radio en fond** : NRJ France et Fun Radio, lecture/pause, volume, muet
+- **Espace équipe** (`#/equipe`) avec comptes collaborateurs et rôles
 
-## Lancer le site
+## Espace équipe
 
-Ouvre `index.html` dans un navigateur, ou mets le dossier en ligne (GitHub Pages : *Settings → Pages → Deploy from branch*).
+Première connexion : identifiant `admin`, mot de passe `skx2026`. Le site te demande alors de créer ton compte administrateur ; le compte `admin` est ensuite désactivé.
 
-## Espace admin
+| Rôle | Accès |
+|---|---|
+| Admin | tout, y compris l'équipe et les réglages |
+| Gestion | produits, stock, univers, radio, commandes, fiches, matières |
+| Atelier | matières, fiches techniques, cahier des charges |
+| Lecture | consultation seule |
 
-- Mot de passe par défaut : **`skx2026`** → change-le dans *Réglages*.
-- Les modifications sont d'abord un **brouillon** visible uniquement sur ton navigateur.
-- Pour les mettre en ligne : *Tableau de bord → Publier* → télécharge `boutique-data.js` et remplace `js/boutique-data.js`.
-- Photos : le mieux est de les mettre dans `assets/produits/` et d'indiquer le chemin (ex. `assets/produits/hoodie.jpg`).
+Les mots de passe sont chiffrés (PBKDF2-SHA256) et ne sont jamais enregistrés en clair.
 
-## Commandes et paiement
+## Cahier des charges (onglets Matières, Fiches techniques, Cahier des charges)
 
-Le site n'a pas de serveur. À la validation d'une commande :
-- si une adresse **Formspree** est réglée (*Réglages*), la commande t'est envoyée automatiquement par email ;
-- sinon le client l'envoie par email (bouton « Envoyer ma commande ») à ton adresse de contact ;
-- si un **lien de paiement** est réglé (Stripe Payment Link, PayPal.me, SumUp…), un bouton « Payer » s'affiche.
+- **Matières** : bibliothèque des matières premières (composition, grammage, certifications GOTS/GRS/OEKO-TEX…, fournisseur, origine, prix, stock).
+- **Fiches techniques** : pour chaque produit, l'assemblage (matières et quantités par pièce), la construction, les finitions, l'entretien et l'atelier. Le site calcule le coût matière, le coefficient et la part de fibres certifiées, et vérifie la fiche par rapport au cahier des charges. Chaque fiche s'imprime ou s'enregistre en PDF.
+- **Cahier des charges** : les exigences de la marque, modifiables et imprimables.
 
-> ⚠️ Le mot de passe admin protège l'interface, mais sur un site statique ce n'est pas une sécurité forte. Les vraies modifications du site passent par ton dépôt GitHub, qui reste le seul vrai accès.
+## Publier les modifications
+
+Les modifications faites dans l'espace équipe restent sur ton navigateur jusqu'à la publication.
+
+**Publier en ligne (recommandé)** : crée un jeton GitHub sur https://github.com/settings/personal-access-tokens/new
+→ *Repository access* : seulement `anthoxxx/sitweb` → *Permissions* : **Contents : Read and write**.
+Colle-le dans *Tableau de bord → Publier en ligne*. Chaque collaborateur qui publie a besoin d'un jeton (ou d'être ajouté comme collaborateur du dépôt GitHub).
+
+**Sinon** : *Télécharger boutique-data.js*, puis remplace `js/boutique-data.js` dans le dépôt.
+
+## Mise en ligne
+
+GitHub → *Settings → Pages* → branche `claude/nice-clarke-bl2gc9`, dossier `/ (root)`. Le site est alors sur https://anthoxxx.github.io/sitweb/
+
+## Limites
+
+Le site n'a pas de serveur : la connexion protège l'interface, pas les données. Le fichier `boutique-data.js` (produits, matières, fiches) est public. Les vraies écritures passent par GitHub, donc par les jetons. Pour des données vraiment privées (prix fournisseurs, marges), il faudra un backend (Supabase, Firebase…).

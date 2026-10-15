@@ -3,43 +3,51 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>SKX — Boutique de vêtements</title>
-  <meta name="description" content="SKX : vêtements streetwear en quatre univers — Montagne, Terre, Pluie, Soleil.">
+  <title>SKX</title>
+  <meta name="description" content="SKX : vêtements en matières biologiques et recyclées, en quatre univers — Montagne, Terre, Pluie, Soleil.">
+  <meta name="theme-color" content="#0b0b0a">
   <link rel="icon" type="image/png" href="assets/favicon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Pirata+One&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..800&family=JetBrains+Mono:wght@400;500&family=Pirata+One&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body data-univers="">
+  <div class="grain" aria-hidden="true"></div>
   <div class="announce" id="announce"></div>
 
   <header class="header">
     <a href="#/" class="brand" aria-label="Accueil SKX">
       <img src="assets/logo-skx-small.png" alt="SKX">
     </a>
-    <button class="burger" id="burger" aria-label="Menu" aria-expanded="false"><span></span><span></span><span></span></button>
     <nav class="nav" id="nav">
-      <a href="#/" data-route="home">Accueil</a>
-      <a href="#/univers/montagne" data-route="montagne" class="nav-u nav-montagne">Montagne</a>
-      <a href="#/univers/terre" data-route="terre" class="nav-u nav-terre">Terre</a>
-      <a href="#/univers/pluie" data-route="pluie" class="nav-u nav-pluie">Pluie</a>
-      <a href="#/univers/soleil" data-route="soleil" class="nav-u nav-soleil">Soleil</a>
+      <a href="#/univers/montagne" data-route="montagne">Montagne</a>
+      <a href="#/univers/terre" data-route="terre">Terre</a>
+      <a href="#/univers/pluie" data-route="pluie">Pluie</a>
+      <a href="#/univers/soleil" data-route="soleil">Soleil</a>
       <a href="#/boutique" data-route="boutique">Boutique</a>
+      <a href="#/matieres" data-route="matieres">Matières</a>
     </nav>
-    <button class="cart-btn" id="cartBtn" aria-label="Panier">
-      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 7h12l-1 13H7L6 7z"/><path d="M9 7a3 3 0 0 1 6 0"/></svg>
-      <span class="cart-count" id="cartCount">0</span>
-    </button>
+    <div class="header-actions">
+      <a href="#/equipe" class="h-btn" id="teamBtn" aria-label="Espace équipe" title="Espace équipe">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>
+        <span class="h-user" id="teamName"></span>
+      </a>
+      <button class="h-btn" id="cartBtn" aria-label="Panier">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 8h14l-1 13H6L5 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>
+        <span class="cart-count" id="cartCount">0</span>
+      </button>
+      <button class="burger" id="burger" aria-label="Menu" aria-expanded="false"><span></span><span></span></button>
+    </div>
   </header>
 
   <main id="app"></main>
 
   <footer class="footer">
     <div class="footer-grid">
-      <div>
+      <div class="footer-brand">
         <img src="assets/logo-skx-small.png" alt="SKX" class="footer-logo">
-        <p class="muted" id="footerSlogan"></p>
+        <p id="footerSlogan"></p>
       </div>
       <div>
         <h4>Univers</h4>
@@ -49,23 +57,24 @@
         <a href="#/univers/soleil">Soleil</a>
       </div>
       <div>
-        <h4>Aide</h4>
-        <a href="#/infos">Livraison &amp; retours</a>
+        <h4>Maison</h4>
+        <a href="#/matieres">Nos matières</a>
+        <a href="#/infos">Livraison et retours</a>
         <a href="#/infos">Guide des tailles</a>
         <a id="footerMail" href="#">Contact</a>
       </div>
       <div>
         <h4>Newsletter</h4>
-        <p class="muted">Les drops en avant-première.</p>
+        <p>Les drops en avant-première.</p>
         <form class="newsletter" id="newsletter">
-          <input type="email" required placeholder="ton@email.fr" aria-label="Email">
-          <button class="btn btn-sm">OK</button>
+          <input type="email" id="newsletterEmail" required placeholder="ton@email.fr" aria-label="Email">
+          <button class="btn btn-sm">S'inscrire</button>
         </form>
       </div>
     </div>
     <div class="footer-bottom">
-      <span>© <span id="year"></span> SKX. Tous droits réservés.</span>
-      <a href="#/admin" class="admin-link">Espace admin</a>
+      <span>© <span id="year"></span> SKX</span>
+      <a href="#/equipe">Espace équipe</a>
     </div>
     <p class="credit">Created by <strong>Anthony F</strong></p>
   </footer>
@@ -74,42 +83,44 @@
   <div class="overlay" id="overlay"></div>
   <aside class="drawer" id="drawer" aria-label="Panier">
     <div class="drawer-head">
-      <h3>Ton panier</h3>
+      <h3>Panier</h3>
       <button class="icon-btn" id="closeDrawer" aria-label="Fermer">✕</button>
     </div>
     <div class="drawer-body" id="cartItems"></div>
     <div class="drawer-foot" id="cartFoot"></div>
   </aside>
 
-  <!-- Fiche produit / modales -->
+  <!-- Modales -->
   <div class="modal" id="modal" role="dialog" aria-modal="true">
     <div class="modal-box" id="modalBox"></div>
   </div>
 
-  <div class="toast" id="toast"></div>
+  <div class="toast" id="toast" role="status"></div>
 
   <!-- Radio -->
   <div class="radio" id="radio">
     <div class="radio-info">
-      <div class="eq" id="eq"><span></span><span></span><span></span><span></span></div>
+      <div class="eq" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
       <div class="radio-text">
-        <div class="radio-live"><span class="dot"></span> <span id="radioStatus">Radio</span></div>
+        <div class="radio-live"><span class="dot"></span><span id="radioStatus">Radio</span></div>
         <select id="stationSelect" aria-label="Station"></select>
       </div>
     </div>
     <div class="radio-controls">
       <button class="r-btn" id="radioPlay" aria-label="Lecture / Pause">
-        <svg class="i-play" viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M8 5v14l11-7z"/></svg>
-        <svg class="i-pause" viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>
+        <svg class="i-play" viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M8 5v14l11-7z"/></svg>
+        <svg class="i-pause" viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z"/></svg>
       </button>
       <button class="r-btn small" id="volDown" aria-label="Baisser le volume">−</button>
       <button class="r-btn small" id="radioMute" aria-label="Couper le son">
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path class="waves" d="M16 9a4 4 0 0 1 0 6M19 6a8 8 0 0 1 0 12"/><path class="cross" d="M16 9l6 6M22 9l-6 6"/></svg>
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path class="waves" d="M16 9a4 4 0 0 1 0 6M19 6a8 8 0 0 1 0 12"/><path class="cross" d="M16 9l6 6M22 9l-6 6"/></svg>
       </button>
       <input type="range" id="volume" min="0" max="100" value="60" aria-label="Volume">
       <button class="r-btn small" id="volUp" aria-label="Monter le volume">+</button>
-      <span class="vol-val" id="volVal">60%</span>
-      <button class="r-btn small hide-radio" id="radioHide" aria-label="Réduire la radio" title="Réduire">▾</button>
+      <span class="vol-val" id="volVal">60</span>
+      <button class="r-btn small hide-radio" id="radioHide" aria-label="Réduire la radio" title="Réduire">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
     </div>
     <audio id="audio" preload="none"></audio>
   </div>
