@@ -7,17 +7,17 @@
  *   - « Télécharger boutique-data.js » puis remplacer ce fichier à la main.
  */
 window.SKX_DATA = {
-  "version": 3,
+  "version": 4,
   "settings": {
     "shopName": "SKX",
-    "slogan": "Né en montagne. Porté partout.",
+    "slogan": "Ta fierté, ton progrès.",
     "currency": "EUR",
     "contactEmail": "contact-team@skx.fr",
     "paymentLink": "",
     "orderEndpoint": "",
     "freeShippingFrom": 80,
     "shippingPrice": 5.9,
-    "announcement": "Livraison offerte dès 80 € — Retours 30 jours — Homme, Femme, Enfants du XS au 3XL",
+    "announcement": "Livraison offerte dès 80 € — Retours 30 jours — Personnalise ton coloris et ton motif",
     "adminPasswordHash": "",
     "githubRepo": "anthoxxx/sitweb",
     "githubBranch": "claude/nice-clarke-bl2gc9",
@@ -66,6 +66,10 @@ window.SKX_DATA = {
       {
         "cat": "Accessoires",
         "text": "Métaux sans nickel, aucun PVC. Étiquettes tissées en coton bio, fil polyester recyclé."
+      },
+      {
+        "cat": "Marquage",
+        "text": "Logo SKX toujours brodé en bas à gauche du vêtement, et présent dans le col (étiquette tissée ou transfert) ou sur l'étiquette."
       },
       {
         "cat": "Qualité",
@@ -319,13 +323,13 @@ window.SKX_DATA = {
       "stock": 25,
       "image": "",
       "featured": true,
-      "description": "Molleton 400 g brossé, capuche doublée, logo SKX brodé poitrine. Coupe oversize.",
+      "description": "Molleton 400 g brossé, capuche doublée, logo SKX brodé en bas à gauche. Coupe oversize.",
       "spec": {
         "status": "En production",
         "madeIn": "Portugal",
         "workshop": "Atelier Barcelos",
         "construction": "Coutures surjetées 4 fils, surpiqûre double aiguille aux emmanchures. Capuche doublée popeline. Poche kangourou.",
-        "finishing": "Broderie ton sur ton poitrine. Lavage adoucissant enzymatique.",
+        "finishing": "Logo SKX brodé en bas à gauche. Étiquette tissée SKX dans le col. Lavage adoucissant enzymatique.",
         "care": "Lavage 30 °C à l'envers. Pas de sèche-linge.",
         "notes": "",
         "components": [
@@ -362,7 +366,26 @@ window.SKX_DATA = {
         ]
       },
       "zone": "streetwear",
-      "gender": "mixte"
+      "gender": "mixte",
+      "colors": [
+        {
+          "name": "Glacier",
+          "hex": "#c9d1d6"
+        },
+        {
+          "name": "Noir",
+          "hex": "#18191b"
+        },
+        {
+          "name": "Sable",
+          "hex": "#c8b79a"
+        },
+        {
+          "name": "Forêt",
+          "hex": "#33433a"
+        }
+      ],
+      "customizable": true
     },
     {
       "id": "p-glacier",
@@ -389,7 +412,7 @@ window.SKX_DATA = {
         "madeIn": "Italie",
         "workshop": "Laboratorio Veneto",
         "construction": "Matelassage losange 6 cm. Coutures étanchées sur épaules. Col montant doublé.",
-        "finishing": "Zip métal sans nickel, tirette gravée SKX.",
+        "finishing": "Logo SKX brodé en bas à gauche. Étiquette tissée SKX dans le col. Zip métal sans nickel, tirette gravée SKX.",
         "care": "Lavage 30 °C, programme délicat.",
         "notes": "",
         "components": [
@@ -426,7 +449,18 @@ window.SKX_DATA = {
         ]
       },
       "zone": "premiere",
-      "gender": "homme"
+      "gender": "homme",
+      "colors": [
+        {
+          "name": "Ardoise",
+          "hex": "#4a5862"
+        },
+        {
+          "name": "Noir",
+          "hex": "#18191b"
+        }
+      ],
+      "customizable": true
     },
     {
       "id": "p-altitude",
@@ -464,7 +498,22 @@ window.SKX_DATA = {
         ]
       },
       "zone": "accessoires",
-      "gender": "mixte"
+      "gender": "mixte",
+      "colors": [
+        {
+          "name": "Craie",
+          "hex": "#e3e4e1"
+        },
+        {
+          "name": "Noir",
+          "hex": "#18191b"
+        },
+        {
+          "name": "Ocre",
+          "hex": "#b8873e"
+        }
+      ],
+      "customizable": false
     },
     {
       "id": "p-argile",
@@ -485,13 +534,13 @@ window.SKX_DATA = {
       "stock": 50,
       "image": "",
       "featured": true,
-      "description": "Coton épais 240 g teint en pièce, col côtelé, logo SKX sérigraphié.",
+      "description": "Coton épais 240 g teint en pièce, col côtelé, logo SKX brodé en bas à gauche.",
       "spec": {
         "status": "En production",
         "madeIn": "Portugal",
         "workshop": "Atelier Barcelos",
         "construction": "Corps tubulaire sans couture latérale. Col bord-côte 2 cm, propreté épaules.",
-        "finishing": "Sérigraphie à l'eau dos. Teinture en pièce.",
+        "finishing": "Logo SKX brodé en bas à gauche. Étiquette tissée SKX dans le col. Sérigraphie à l'eau dos. Teinture en pièce.",
         "care": "Lavage 30 °C à l'envers.",
         "notes": "",
         "components": [
@@ -518,7 +567,26 @@ window.SKX_DATA = {
         ]
       },
       "zone": "streetwear",
-      "gender": "mixte"
+      "gender": "mixte",
+      "colors": [
+        {
+          "name": "Argile",
+          "hex": "#9a6a3e"
+        },
+        {
+          "name": "Craie",
+          "hex": "#e8e4da"
+        },
+        {
+          "name": "Noir",
+          "hex": "#18191b"
+        },
+        {
+          "name": "Olive",
+          "hex": "#5d6345"
+        }
+      ],
+      "customizable": true
     },
     {
       "id": "p-racine",
@@ -577,7 +645,22 @@ window.SKX_DATA = {
         ]
       },
       "zone": "streetwear",
-      "gender": "homme"
+      "gender": "homme",
+      "colors": [
+        {
+          "name": "Terre",
+          "hex": "#5a4232"
+        },
+        {
+          "name": "Noir",
+          "hex": "#18191b"
+        },
+        {
+          "name": "Kaki",
+          "hex": "#5d6345"
+        }
+      ],
+      "customizable": false
     },
     {
       "id": "p-desert",
@@ -625,7 +708,18 @@ window.SKX_DATA = {
         ]
       },
       "zone": "accessoires",
-      "gender": "mixte"
+      "gender": "mixte",
+      "colors": [
+        {
+          "name": "Sable",
+          "hex": "#b49473"
+        },
+        {
+          "name": "Noir",
+          "hex": "#18191b"
+        }
+      ],
+      "customizable": true
     },
     {
       "id": "p-averse",
@@ -652,7 +746,7 @@ window.SKX_DATA = {
         "madeIn": "Italie",
         "workshop": "Laboratorio Veneto",
         "construction": "Coutures thermocollées. Capuche escamotable dans le col. Poignets élastiqués.",
-        "finishing": "Logo réfléchissant dos. Zip métal sans nickel.",
+        "finishing": "Logo SKX brodé en bas à gauche. Étiquette tissée SKX dans le col. Logo réfléchissant dos. Zip métal sans nickel.",
         "care": "Lavage 30 °C. Ne pas repasser.",
         "notes": "",
         "components": [
@@ -684,7 +778,22 @@ window.SKX_DATA = {
         ]
       },
       "zone": "sport",
-      "gender": "mixte"
+      "gender": "mixte",
+      "colors": [
+        {
+          "name": "Orage",
+          "hex": "#353e44"
+        },
+        {
+          "name": "Noir",
+          "hex": "#18191b"
+        },
+        {
+          "name": "Glacier",
+          "hex": "#9fb3c2"
+        }
+      ],
+      "customizable": true
     },
     {
       "id": "p-orage",
@@ -705,13 +814,13 @@ window.SKX_DATA = {
       "stock": 22,
       "image": "",
       "featured": false,
-      "description": "Molleton noir orage, logo SKX réfléchissant visible la nuit.",
+      "description": "Molleton noir orage, logo SKX brodé en bas à gauche, transfert réfléchissant au dos.",
       "spec": {
         "status": "En production",
         "madeIn": "Portugal",
         "workshop": "Atelier Barcelos",
         "construction": "Coutures surjetées 4 fils. Capuche double épaisseur.",
-        "finishing": "Transfert réfléchissant dos.",
+        "finishing": "Logo SKX brodé en bas à gauche. Étiquette tissée SKX dans le col. Transfert réfléchissant dos.",
         "care": "Lavage 30 °C à l'envers.",
         "notes": "",
         "components": [
@@ -743,7 +852,18 @@ window.SKX_DATA = {
         ]
       },
       "zone": "streetwear",
-      "gender": "mixte"
+      "gender": "mixte",
+      "colors": [
+        {
+          "name": "Orage",
+          "hex": "#24292d"
+        },
+        {
+          "name": "Ardoise",
+          "hex": "#4a5862"
+        }
+      ],
+      "customizable": true
     },
     {
       "id": "p-bruine",
@@ -791,7 +911,18 @@ window.SKX_DATA = {
         ]
       },
       "zone": "accessoires",
-      "gender": "mixte"
+      "gender": "mixte",
+      "colors": [
+        {
+          "name": "Brume",
+          "hex": "#4f5d66"
+        },
+        {
+          "name": "Noir",
+          "hex": "#18191b"
+        }
+      ],
+      "customizable": true
     },
     {
       "id": "p-zenith",
@@ -812,13 +943,13 @@ window.SKX_DATA = {
       "stock": 45,
       "image": "",
       "featured": false,
-      "description": "Coton léger 180 g, coupe boxy, logo SKX gothique dans le dos.",
+      "description": "Coton léger 180 g, coupe boxy, grand motif gothique sérigraphié dans le dos.",
       "spec": {
         "status": "En production",
         "madeIn": "Portugal",
         "workshop": "Atelier Barcelos",
         "construction": "Coupe boxy, épaules tombantes. Col bord-côte 1,5 cm.",
-        "finishing": "Sérigraphie à l'eau dos grand format.",
+        "finishing": "Logo SKX brodé en bas à gauche. Étiquette tissée SKX dans le col. Sérigraphie à l'eau dos grand format.",
         "care": "Lavage 30 °C à l'envers.",
         "notes": "",
         "components": [
@@ -845,7 +976,22 @@ window.SKX_DATA = {
         ]
       },
       "zone": "cool",
-      "gender": "femme"
+      "gender": "femme",
+      "colors": [
+        {
+          "name": "Zénith",
+          "hex": "#d39a2c"
+        },
+        {
+          "name": "Craie",
+          "hex": "#e8e4da"
+        },
+        {
+          "name": "Noir",
+          "hex": "#18191b"
+        }
+      ],
+      "customizable": true
     },
     {
       "id": "p-aube",
@@ -904,7 +1050,22 @@ window.SKX_DATA = {
         ]
       },
       "zone": "sport",
-      "gender": "femme"
+      "gender": "femme",
+      "colors": [
+        {
+          "name": "Aube",
+          "hex": "#b8582f"
+        },
+        {
+          "name": "Noir",
+          "hex": "#18191b"
+        },
+        {
+          "name": "Gris chiné",
+          "hex": "#8d8d88"
+        }
+      ],
+      "customizable": false
     },
     {
       "id": "p-solstice",
@@ -952,7 +1113,18 @@ window.SKX_DATA = {
         ]
       },
       "zone": "accessoires",
-      "gender": "mixte"
+      "gender": "mixte",
+      "colors": [
+        {
+          "name": "Solstice",
+          "hex": "#d8b04a"
+        },
+        {
+          "name": "Noir",
+          "hex": "#18191b"
+        }
+      ],
+      "customizable": true
     },
     {
       "id": "p-cime",
@@ -979,7 +1151,7 @@ window.SKX_DATA = {
         "madeIn": "Italie",
         "workshop": "Laboratorio Veneto",
         "construction": "Matelassage losange 6 cm. Coutures étanchées sur épaules. Col montant doublé.",
-        "finishing": "Zip métal sans nickel, tirette gravée SKX.",
+        "finishing": "Logo SKX brodé en bas à gauche. Étiquette tissée SKX dans le col. Zip métal sans nickel, tirette gravée SKX.",
         "care": "Lavage 30 °C, programme délicat.",
         "notes": "",
         "components": [
@@ -1016,7 +1188,18 @@ window.SKX_DATA = {
         ]
       },
       "zone": "premiere",
-      "gender": "femme"
+      "gender": "femme",
+      "colors": [
+        {
+          "name": "Nuit",
+          "hex": "#1c1f22"
+        },
+        {
+          "name": "Sable",
+          "hex": "#c8b79a"
+        }
+      ],
+      "customizable": true
     },
     {
       "id": "p-crete",
@@ -1043,7 +1226,7 @@ window.SKX_DATA = {
         "madeIn": "Portugal",
         "workshop": "Atelier Barcelos",
         "construction": "Coutures surjetées 4 fils. Capuche double épaisseur.",
-        "finishing": "Transfert réfléchissant dos.",
+        "finishing": "Logo SKX brodé en bas à gauche. Étiquette tissée SKX dans le col. Transfert réfléchissant dos.",
         "care": "Lavage 30 °C à l'envers.",
         "notes": "",
         "components": [
@@ -1075,7 +1258,22 @@ window.SKX_DATA = {
         ]
       },
       "zone": "sport",
-      "gender": "homme"
+      "gender": "homme",
+      "colors": [
+        {
+          "name": "Forêt",
+          "hex": "#3b4d3f"
+        },
+        {
+          "name": "Noir",
+          "hex": "#18191b"
+        },
+        {
+          "name": "Glacier",
+          "hex": "#9fb3c2"
+        }
+      ],
+      "customizable": true
     },
     {
       "id": "p-mini-sommet",
@@ -1102,7 +1300,7 @@ window.SKX_DATA = {
         "madeIn": "Portugal",
         "workshop": "Atelier Barcelos",
         "construction": "Coutures surjetées 4 fils, surpiqûre double aiguille aux emmanchures. Capuche doublée popeline. Poche kangourou.",
-        "finishing": "Broderie ton sur ton poitrine. Lavage adoucissant enzymatique.",
+        "finishing": "Logo SKX brodé en bas à gauche. Étiquette tissée SKX dans le col. Lavage adoucissant enzymatique.",
         "care": "Lavage 30 °C à l'envers. Pas de sèche-linge.",
         "notes": "",
         "components": [
@@ -1139,7 +1337,22 @@ window.SKX_DATA = {
         ]
       },
       "zone": "cool",
-      "gender": "enfant"
+      "gender": "enfant",
+      "colors": [
+        {
+          "name": "Glacier",
+          "hex": "#9fb3c2"
+        },
+        {
+          "name": "Sable",
+          "hex": "#c8b79a"
+        },
+        {
+          "name": "Rouge sommet",
+          "hex": "#9b3b2e"
+        }
+      ],
+      "customizable": true
     },
     {
       "id": "p-mini-argile",
@@ -1166,7 +1379,7 @@ window.SKX_DATA = {
         "madeIn": "Portugal",
         "workshop": "Atelier Barcelos",
         "construction": "Corps tubulaire sans couture latérale. Col bord-côte 2 cm, propreté épaules.",
-        "finishing": "Sérigraphie à l'eau dos. Teinture en pièce.",
+        "finishing": "Logo SKX brodé en bas à gauche. Étiquette tissée SKX dans le col. Sérigraphie à l'eau dos. Teinture en pièce.",
         "care": "Lavage 30 °C à l'envers.",
         "notes": "",
         "components": [
@@ -1193,7 +1406,22 @@ window.SKX_DATA = {
         ]
       },
       "zone": "streetwear",
-      "gender": "enfant"
+      "gender": "enfant",
+      "colors": [
+        {
+          "name": "Argile",
+          "hex": "#b07a48"
+        },
+        {
+          "name": "Craie",
+          "hex": "#e8e4da"
+        },
+        {
+          "name": "Noir",
+          "hex": "#18191b"
+        }
+      ],
+      "customizable": true
     },
     {
       "id": "p-redescente",
@@ -1220,7 +1448,7 @@ window.SKX_DATA = {
         "madeIn": "Portugal",
         "workshop": "Atelier Barcelos",
         "construction": "Coupe boxy, épaules tombantes. Col bord-côte 1,5 cm.",
-        "finishing": "Sérigraphie à l'eau dos grand format.",
+        "finishing": "Logo SKX brodé en bas à gauche. Étiquette tissée SKX dans le col. Sérigraphie à l'eau dos grand format.",
         "care": "Lavage 30 °C à l'envers.",
         "notes": "",
         "components": [
@@ -1247,7 +1475,22 @@ window.SKX_DATA = {
         ]
       },
       "zone": "cool",
-      "gender": "homme"
+      "gender": "homme",
+      "colors": [
+        {
+          "name": "Lichen",
+          "hex": "#8a8f7a"
+        },
+        {
+          "name": "Craie",
+          "hex": "#e8e4da"
+        },
+        {
+          "name": "Noir",
+          "hex": "#18191b"
+        }
+      ],
+      "customizable": true
     }
   ],
   "zones": {
@@ -1319,12 +1562,125 @@ window.SKX_DATA = {
   },
   "people": [
     {
-      "id": "pp-anthony",
-      "name": "Anthony F",
+      "id": "pp-karim",
+      "name": "Karim",
       "title": "Fondateur",
-      "bio": "A imaginé SKX en 2014. Dessine la marque, choisit les matières et suit chaque collection.",
+      "bio": "Fondateur de la marque. Passionné de sport, de culture et d'aventures en tout genre.",
+      "quote": "Ce qui me motive ? Le besoin du style, en créant des pièces qui suivent les aventures de chacun.",
       "photo": "",
-      "since": "2014"
+      "since": "",
+      "avatar": {
+        "hair": "court",
+        "facial": "barbe",
+        "acc": "casquette",
+        "top": "#33433a",
+        "bg": "sport",
+        "skin": "#cbc3b4",
+        "hairColor": "#1b1a19"
+      }
+    },
+    {
+      "id": "pp-anthony",
+      "name": "Anthony",
+      "title": "Co-gestionnaire · Designer",
+      "bio": "Co-gestionnaire et designer de la marque. Passionné d'informatique et de belles autos.",
+      "quote": "Ce qui est essentiel, à mon avis, c'est d'imaginer le développement sous tous ses angles.",
+      "photo": "",
+      "since": "",
+      "avatar": {
+        "hair": "meche",
+        "facial": "aucune",
+        "acc": "lunettes",
+        "top": "#1c1f22",
+        "bg": "premiere",
+        "skin": "#cbc3b4",
+        "hairColor": "#2a211b"
+      }
+    },
+    {
+      "id": "pp-fabio",
+      "name": "Fabio",
+      "title": "Co-gestionnaire du site",
+      "bio": "Co-gestionnaire du site, côté technique et expérience client.",
+      "quote": "Je veille à ce que ton expérience sur le site soit aussi fluide que possible.",
+      "photo": "",
+      "since": "",
+      "avatar": {
+        "hair": "boucle",
+        "facial": "moustache",
+        "acc": "casque",
+        "top": "#4a5862",
+        "bg": "streetwear",
+        "skin": "#cbc3b4",
+        "hairColor": "#151413"
+      }
     }
-  ]
+  ],
+  "designs": [
+    {
+      "id": "none",
+      "name": "Uni",
+      "price": 0,
+      "enabled": true,
+      "image": ""
+    },
+    {
+      "id": "crete",
+      "name": "Crête",
+      "price": 5,
+      "enabled": true,
+      "image": ""
+    },
+    {
+      "id": "gothique",
+      "name": "SKX gothique",
+      "price": 5,
+      "enabled": true,
+      "image": ""
+    },
+    {
+      "id": "boussole",
+      "name": "Boussole",
+      "price": 5,
+      "enabled": true,
+      "image": ""
+    },
+    {
+      "id": "altitude",
+      "name": "4 808 m",
+      "price": 5,
+      "enabled": true,
+      "image": ""
+    },
+    {
+      "id": "slogan",
+      "name": "Ta fierté, ton progrès",
+      "price": 7,
+      "enabled": true,
+      "image": ""
+    }
+  ],
+  "promos": {
+    "maxCode": 70,
+    "maxSale": 50,
+    "codes": [],
+    "sales": [],
+    "volume": {
+      "enabled": false,
+      "tiers": [
+        {
+          "qty": 2,
+          "percent": 5
+        },
+        {
+          "qty": 3,
+          "percent": 10
+        }
+      ]
+    },
+    "giftWrap": {
+      "enabled": true,
+      "price": 3
+    }
+  }
 };

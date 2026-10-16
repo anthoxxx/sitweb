@@ -53,12 +53,12 @@
   const STATUSES = ["Prototype", "Validé", "En production", "Arrêté"];
   const NEAR_COUNTRIES = ["france", "portugal", "espagne", "italie", "allemagne", "belgique", "pays-bas", "autriche", "suisse", "grèce", "pologne", "roumanie", "bulgarie", "lituanie", "lettonie", "estonie", "république tchèque", "slovénie", "croatie", "hongrie", "slovaquie", "danemark", "suède", "irlande", "royaume-uni", "turquie", "maroc", "tunisie", "europe"];
   const ROLES = {
-    admin: { label: "Admin", desc: "Accès total, gère l'équipe", tabs: ["dashboard", "products", "specs", "materials", "charter", "zones", "history", "people", "radio", "orders", "team", "settings", "account"], publish: true },
-    gestion: { label: "Gestion", desc: "Boutique, stock, radio", tabs: ["dashboard", "products", "specs", "materials", "charter", "zones", "history", "people", "radio", "orders", "account"], publish: true },
+    admin: { label: "Admin", desc: "Accès total, gère l'équipe", tabs: ["dashboard", "products", "specs", "materials", "charter", "promos", "designs", "zones", "history", "people", "radio", "orders", "team", "settings", "account"], publish: true },
+    gestion: { label: "Gestion", desc: "Boutique, stock, radio", tabs: ["dashboard", "products", "specs", "materials", "charter", "promos", "designs", "zones", "history", "people", "radio", "orders", "account"], publish: true },
     atelier: { label: "Atelier", desc: "Matières et fiches techniques", tabs: ["dashboard", "specs", "materials", "charter", "account"], publish: true },
     lecture: { label: "Lecture", desc: "Consultation seule", tabs: ["dashboard", "products", "specs", "materials", "charter", "account"], publish: false, readOnly: true }
   };
-  const TAB_LABELS = { dashboard: "Tableau de bord", products: "Produits", specs: "Fiches techniques", materials: "Matières", charter: "Cahier des charges", zones: "Zones", history: "Histoire", people: "Page équipe", radio: "Radio", orders: "Commandes", team: "Accès", settings: "Réglages", account: "Mon compte" };
+  const TAB_LABELS = { dashboard: "Tableau de bord", products: "Produits", specs: "Fiches techniques", materials: "Matières", charter: "Cahier des charges", promos: "Promotions", designs: "Personnalisation", zones: "Zones", history: "Histoire", people: "Page équipe", radio: "Radio", orders: "Commandes", team: "Accès", settings: "Réglages", account: "Mon compte" };
 
   /* ---------- Données ---------- */
   let PUBLISHED = normalize(clone(window.SKX_DATA || {}));
@@ -77,7 +77,11 @@
     d.materials = Array.isArray(d.materials) ? d.materials : clone(base.materials || []);
     d.charter = d.charter && Array.isArray(d.charter.rules) ? d.charter : clone(base.charter || { intro: "", rules: [] });
     d.team = Array.isArray(d.team) ? d.team : [];
-    d.products.forEach((p) => { ensureSpec(p); if (!ZONE_IDS.includes(p.zone)) p.zone = "streetwear"; if (!GENDERS[p.gender]) p.gender = "mixte"; delete p.univers; });
+    d.designs = Array.isArray(d.designs) && d.designs.length ? d.designs : clone(base.designs || [{ id: "none", name: "Uni", price: 0, enabled: true, image: "" }]);
+    d.promos = Object.assign(clone(base.promos || { maxCode: 70, maxSale: 50, codes: [], sales: [], volume: { enabled: false, tiers: [] }, giftWrap: { enabled: false, price: 0 } }), d.promos || {});
+    d.promos.maxCode = Math.min(+d.promos.maxCode || 70, 70); d.promos.maxSale = Math.min(+d.promos.maxSale || 50, 50);
+    d.people.forEach((m) => { m.avatar = Object.assign({ hair: "court", facial: "aucune", acc: "aucun", top: "#1c1f22", bg: "streetwear", skin: "#cbc3b4", hairColor: "#1b1a19" }, m.avatar || {}); });
+    d.products.forEach((p) => { ensureSpec(p); if (!ZONE_IDS.includes(p.zone)) p.zone = "streetwear"; if (!GENDERS[p.gender]) p.gender = "mixte"; delete p.univers; if (!Array.isArray(p.colors) || !p.colors.length) p.colors = [{ name: "Unique", hex: p.color || "#c9c4b8" }]; if (p.customizable === undefined) p.customizable = ["tshirt", "hoodie", "veste", "casquette"].includes(p.type); });
     delete d.univers;
     return d;
   }
@@ -148,20 +152,43 @@
     casquette: { body: "M52 128 Q52 66 102 66 Q150 66 150 128 Z", stitch: ["M102 66 V128", "M76 72 Q70 100 72 128", "M128 72 Q134 100 132 128"], extra: '<path d="M44 126 L178 126 Q186 142 160 144 L44 136 Z" fill="rgba(0,0,0,.25)" stroke="rgba(0,0,0,.45)" stroke-width="1"/><circle cx="102" cy="66" r="4" fill="rgba(0,0,0,.3)"/>' },
     bonnet: { body: "M56 150 Q56 62 100 62 Q144 62 144 150 Z", stitch: ["M64 80 V150", "M74 70 V150", "M84 64 V150", "M94 62 V150", "M106 62 V150", "M116 64 V150", "M126 70 V150", "M136 80 V150"], extra: '<rect x="52" y="132" width="96" height="30" rx="2" fill="rgba(0,0,0,.18)" stroke="rgba(0,0,0,.45)" stroke-width="1"/>' }
   };
+  // Règle de marquage : logo SKX brodé en bas à gauche + étiquette dans le col
+  const LOGO_BL = { tshirt: [70, 168, 7], hoodie: [70, 172, 7], veste: [68, 172, 7], pantalon: [68, 164, 6], casquette: [70, 120, 6], bonnet: [66, 152, 6] };
+  const COLLAR = { tshirt: [94, 47], hoodie: [94, 50], veste: [94, 44] };
+  // Emplacement du motif personnalisé : [x, y, taille]
+  const DESIGN_AT = { tshirt: [100, 100, 44], hoodie: [100, 104, 38], veste: [122, 88, 22], pantalon: [80, 104, 20], casquette: [101, 100, 28], bonnet: [100, 104, 28] };
+  const BUILTIN_DESIGNS = {
+    crete: (x, y, s, c) => `<g fill="none" stroke="${c}" stroke-width="${s / 22}" stroke-linejoin="round"><path d="M${x - s / 2} ${y + s * .22} L${x - s * .26} ${y - s * .06} L${x - s * .12} ${y + s * .08} L${x + s * .06} ${y - s * .24} L${x + s * .24} ${y + s * .02} L${x + s / 2} ${y + s * .22}"/><path d="M${x + s * .06} ${y - s * .24} L${x + s * .0} ${y - s * .14} L${x + s * .12} ${y - s * .14}" stroke-width="${s / 40}"/><line x1="${x - s / 2}" y1="${y + s * .3}" x2="${x + s / 2}" y2="${y + s * .3}"/></g>`,
+    gothique: (x, y, s, c) => `<text x="${x}" y="${y + s * .18}" text-anchor="middle" font-family="Pirata One, serif" font-size="${s * .62}" fill="${c}">SKX</text>`,
+    boussole: (x, y, s, c) => `<g fill="none" stroke="${c}" stroke-width="${s / 30}"><circle cx="${x}" cy="${y}" r="${s * .36}"/><circle cx="${x}" cy="${y}" r="${s * .28}" stroke-dasharray="1 2"/><path d="M${x} ${y - s * .34} L${x + s * .07} ${y} L${x} ${y + s * .34} L${x - s * .07} ${y} Z" fill="${c}" fill-opacity=".85"/></g><text x="${x}" y="${y - s * .42}" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="${s * .12}" fill="${c}">N</text>`,
+    altitude: (x, y, s, c) => `<path d="M${x - s * .14} ${y - s * .06} L${x} ${y - s * .3} L${x + s * .14} ${y - s * .06} Z" fill="${c}"/><text x="${x}" y="${y + s * .16}" text-anchor="middle" font-family="Archivo, sans-serif" font-weight="800" font-size="${s * .26}" fill="${c}">4808</text><text x="${x}" y="${y + s * .3}" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="${s * .1}" letter-spacing="1" fill="${c}">MÈTRES</text>`,
+    slogan: (x, y, s, c) => `<g font-family="Archivo, sans-serif" font-weight="800" text-anchor="middle" fill="${c}"><text x="${x}" y="${y - s * .04}" font-size="${s * .17}">TA FIERTÉ,</text><text x="${x}" y="${y + s * .16}" font-size="${s * .17}">TON PROGRÈS</text></g><line x1="${x - s * .3}" y1="${y + s * .26}" x2="${x + s * .3}" y2="${y + s * .26}" stroke="${c}" stroke-width="${s / 50}"/>`
+  };
   function lum(hex) {
     const m = /^#?([0-9a-f]{6})$/i.exec(hex || ""); if (!m) return .5;
     const n = parseInt(m[1], 16); return (0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255;
   }
-  function productSVG(p, light = false) {
+  const designById = (id) => (DATA.designs || []).find((d) => d.id === id);
+  function productSVG(p, opt = {}) {
+    const light = !!opt.light;
     const sh = SHAPES[p.type] || SHAPES.tshirt;
-    const color = /^#[0-9a-f]{6}$/i.test(p.color) ? p.color : "#bbbbbb";
+    const colorHex = opt.color || p.color;
+    const color = /^#[0-9a-f]{6}$/i.test(colorHex) ? colorHex : "#bbbbbb";
     const tint = UTINT[p.zone] || "#888";
     const g = "g" + Math.random().toString(36).slice(2, 8);
-    const stitchCol = lum(color) > .5 ? "rgba(0,0,0,.35)" : "rgba(255,255,255,.28)";
+    const dark = lum(color) > .5;
+    const stitchCol = dark ? "rgba(0,0,0,.35)" : "rgba(255,255,255,.28)";
+    const ink = dark ? "#151413" : "#efece4";
     const main = (p.spec?.components || []).map((c) => materialById(c.materialId)).find((m) => m && m.weight);
     const code = `SKX/${TYPE_CODE[p.type] || "XX"}-${String(p.id).replace(/^p-/, "").slice(0, 6).toUpperCase()}`;
     const bg = light ? "#ffffff" : "#121211";
-    const ink = light ? "#555" : "#8f8d85";
+    const meta = light ? "#555" : "#8f8d85";
+    const [lx, ly, ls] = LOGO_BL[p.type] || LOGO_BL.tshirt;
+    const col = COLLAR[p.type];
+    const d = opt.design && opt.design !== "none" ? designById(opt.design) : null;
+    const [dx, dy, ds] = DESIGN_AT[p.type] || DESIGN_AT.tshirt;
+    let motif = "";
+    if (d) motif = d.image ? `<image href="${esc(d.image)}" x="${dx - ds / 2}" y="${dy - ds / 2}" width="${ds}" height="${ds}" preserveAspectRatio="xMidYMid meet"/>` : (BUILTIN_DESIGNS[d.id] ? BUILTIN_DESIGNS[d.id](dx, dy, ds, ink) : "");
     return `<svg viewBox="0 0 200 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${esc(p.name)}">
       <defs>
         <radialGradient id="${g}b" cx=".5" cy=".42" r=".75"><stop offset="0" stop-color="${tint}" stop-opacity="${light ? 0 : .16}"/><stop offset="1" stop-color="${bg}" stop-opacity="0"/></radialGradient>
@@ -173,15 +200,44 @@
         <path d="${sh.body}" fill="${color}" stroke="rgba(0,0,0,.55)" stroke-width="1" stroke-linejoin="round"/>
         ${sh.extra || ""}
         <path d="${sh.body}" fill="url(#${g}s)"/>
-        <g fill="none" stroke="${stitchCol}" stroke-width=".7" stroke-dasharray="2 1.6">${sh.stitch.map((d) => `<path d="${d}"/>`).join("")}</g>
+        <g fill="none" stroke="${stitchCol}" stroke-width=".7" stroke-dasharray="2 1.6">${sh.stitch.map((s) => `<path d="${s}"/>`).join("")}</g>
+        ${motif}
+        ${col ? `<rect x="${col[0]}" y="${col[1]}" width="12" height="6" fill="#111" stroke="rgba(255,255,255,.35)" stroke-width=".4"/><text x="${col[0] + 6}" y="${col[1] + 4.6}" text-anchor="middle" font-family="Pirata One, serif" font-size="4.6" fill="#eee">SKX</text>` : ""}
+        <text x="${lx}" y="${ly}" font-family="Pirata One, serif" font-size="${ls}" fill="${ink}" opacity=".9">SKX</text>
       </g>
-      <g font-family="JetBrains Mono, monospace" font-size="6.5" letter-spacing=".8" fill="${ink}">
+      <g font-family="JetBrains Mono, monospace" font-size="6.5" letter-spacing=".8" fill="${meta}">
         <text x="12" y="240">${esc(code)}</text>
         <text x="188" y="240" text-anchor="end">${main ? esc(main.weight + " G/M²") : esc((TYPES[p.type] || "").toUpperCase())}</text>
       </g>
     </svg>`;
   }
-  const productVisual = (p, light) => (p.image ? `<img src="${esc(p.image)}" alt="${esc(p.name)}" loading="lazy">` : productSVG(p, light));
+  const productVisual = (p, opt = {}) => (p.image && !opt.custom ? `<img src="${esc(p.image)}" alt="${esc(p.name)}" loading="lazy">` : productSVG(p, opt));
+
+  /* ---------- Prix, soldes, codes promo ---------- */
+  const round2 = (n) => Math.round(n * 100) / 100;
+  const today = () => new Date().toISOString().slice(0, 10);
+  const P = () => DATA.promos;
+  function activeSales() {
+    const t = today();
+    return (P().sales || []).filter((s) => s.active && (!s.start || s.start <= t) && (!s.end || s.end >= t));
+  }
+  function saleFor(p) {
+    let best = null;
+    for (const s of activeSales()) if ((s.productIds || []).includes(p.id) && (!best || s.percent > best.percent)) best = s;
+    return best ? { name: best.name, percent: Math.min(+best.percent || 0, +P().maxSale || 50) } : null;
+  }
+  function priceInfo(p) {
+    const sale = saleFor(p);
+    if (sale && sale.percent > 0) return { now: round2(p.price * (1 - sale.percent / 100)), was: p.price, sale };
+    return { now: +p.price, was: p.oldPrice && +p.oldPrice > +p.price ? +p.oldPrice : null, sale: null };
+  }
+  const priceHTML = (p) => { const pi = priceInfo(p); return `${money(pi.now)}${pi.was ? `<s>${money(pi.was)}</s>` : ""}`; };
+  const normCode = (c) => String(c || "").trim().toUpperCase();
+  const codeHash = (c) => cyrb53(normCode(c), 2014);
+  function findCode(code) {
+    const h = codeHash(code), t = today();
+    return (P().codes || []).find((c) => c.hash === h && c.active && (!c.expires || c.expires >= t)) || null;
+  }
 
   /* ---------- UI générale ---------- */
   let toastTimer;
@@ -192,7 +248,9 @@
   function applySettings() {
     const s = S();
     document.title = s.shopName || "SKX";
-    $("#announce").textContent = s.announcement || "";
+    const sales = activeSales();
+    $("#announce").textContent = sales.length ? `${sales[0].name} : jusqu'à −${Math.min(Math.max(...sales.map((x) => +x.percent || 0)), +P().maxSale || 50)} % — ${s.announcement || ""}` : s.announcement || "";
+    $("#navSoldes").hidden = !sales.length;
     $("#footerSlogan").textContent = s.slogan || "";
     $("#founded").textContent = s.founded || "2014";
     $$(".contact-mail").forEach((a) => { a.href = s.contactEmail ? `mailto:${s.contactEmail}` : "#"; a.textContent = s.contactEmail || ""; });
@@ -211,72 +269,117 @@
   function closeModal() { $("#modal").classList.remove("open"); document.body.style.overflow = ""; }
   $("#modal").addEventListener("click", (e) => { if (e.target.id === "modal" || e.target.closest("[data-close]")) closeModal(); });
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") { closeModal(); closeCart(); } });
-
   $("#burger").addEventListener("click", () => {
     const open = $("#nav").classList.toggle("open");
     $("#burger").setAttribute("aria-expanded", open);
   });
   $("#nav").addEventListener("click", (e) => { if (e.target.closest("a")) { $("#nav").classList.remove("open"); $("#burger").setAttribute("aria-expanded", false); } });
 
-
   /* ---------- Cartes produits ---------- */
   function productCard(p) {
     const u = DATA.zones[p.zone];
     const out = (+p.stock || 0) <= 0;
-    const promo = p.oldPrice && +p.oldPrice > +p.price;
+    const pi = priceInfo(p);
+    const off = pi.was ? Math.round(100 - (pi.now / pi.was) * 100) : 0;
+    const colors = (p.colors || []).slice(0, 5);
     return `<article class="card" data-product="${esc(p.id)}" tabindex="0">
       <div class="card-img">
         ${productVisual(p)}
         ${u ? `<span class="tag"><span class="sw sw-${p.zone}"></span>${esc(u.name)}</span>` : ""}
-        ${out ? `<span class="tag tag-r tag-out">Épuisé</span>` : promo ? `<span class="tag tag-r tag-promo">−${Math.round(100 - (p.price / p.oldPrice) * 100)} %</span>` : ""}
+        ${out ? `<span class="tag tag-r tag-out">Épuisé</span>` : pi.sale ? `<span class="tag tag-r tag-sale">Soldes −${off} %</span>` : off ? `<span class="tag tag-r tag-promo">−${off} %</span>` : p.zone === "premiere" ? `<span class="tag tag-r tag-limited">Série limitée</span>` : (+p.stock || 0) <= 5 ? `<span class="tag tag-r tag-promo">Derniers</span>` : ""}
       </div>
       <div class="card-row">
         <h3>${esc(p.name)}</h3>
-        <span class="price">${money(p.price)}${promo ? `<s>${money(p.oldPrice)}</s>` : ""}</span>
+        <span class="price">${priceHTML(p)}</span>
       </div>
-      <span class="sub">${esc(GENDERS[p.gender] || "")} · ${esc(TYPES[p.type] || "")}${p.spec?.madeIn ? " · Fait en " + esc(p.spec.madeIn) : ""}</span>
+      <div class="card-row card-meta">
+        <span class="sub">${esc(GENDERS[p.gender] || "")} · ${esc(TYPES[p.type] || "")}</span>
+        ${colors.length > 1 ? `<span class="dots">${colors.map((c) => `<i style="background:${esc(c.hex)}" title="${esc(c.name)}"></i>`).join("")}</span>` : ""}
+      </div>
     </article>`;
   }
   const grid = (list) => list.length ? `<div class="grid">${list.map(productCard).join("")}</div>` : `<div class="empty">Aucun article pour le moment. Les prochains drops arrivent.</div>`;
   document.addEventListener("click", (e) => { const c = e.target.closest("[data-product]"); if (c) openProduct(c.dataset.product); });
   document.addEventListener("keydown", (e) => { if (e.key === "Enter" && e.target.matches?.("[data-product]")) openProduct(e.target.dataset.product); });
 
+  /* Recommandations : compléter la tenue */
+  function recommend(exclude, n = 3, zone) {
+    const inCartTypes = new Set(exclude.map((id) => productById(id)?.type).filter(Boolean));
+    return DATA.products
+      .filter((p) => !exclude.includes(p.id) && (+p.stock || 0) > 0)
+      .map((p) => ({ p, s: (inCartTypes.has(p.type) ? 0 : 3) + (p.zone === zone ? 2 : 0) + (p.zone === "accessoires" ? 1.5 : 0) + (saleFor(p) ? 1 : 0) + (p.featured ? .5 : 0) + Math.random() * .4 }))
+      .sort((a, b) => b.s - a.s).slice(0, n).map((x) => x.p);
+  }
+  const miniCard = (p) => `<button class="mini" data-product="${esc(p.id)}"><span class="mini-img">${productVisual(p)}</span><span class="mini-txt"><b>${esc(p.name)}</b><span class="price">${priceHTML(p)}</span></span></button>`;
+  const seen = () => store.get("skx_seen", []).filter((id) => productById(id));
+  function markSeen(id) { const s = seen().filter((x) => x !== id); s.unshift(id); store.set("skx_seen", s.slice(0, 8)); }
+
   /* ---------- Fiche produit ---------- */
   function openProduct(id) {
     const p = productById(id); if (!p) return;
+    markSeen(id);
     const sizes = p.sizes && p.sizes.length ? p.sizes : ["Unique"];
     let size = sizes.length === 1 ? sizes[0] : null, qty = 1;
+    const colors = p.colors && p.colors.length ? p.colors : [{ name: "Unique", hex: p.color }];
+    let color = colors[0], design = "none";
+    const designs = p.customizable ? (DATA.designs || []).filter((d) => d.enabled) : [];
     const stock = +p.stock || 0;
     const u = DATA.zones[p.zone];
     const st = specStats(p);
+    const pi = priceInfo(p);
     const visibleMats = st.materials.filter((m) => !["Fil", "Étiquette", "Accessoire", "Emballage"].includes(m.category));
+    const recos = recommend([p.id, ...cart.map((l) => l.id)], 3, p.zone);
     const box = openModal(`<div class="pdp">
-      <div class="pdp-img">${productVisual(p)}</div>
+      <div class="pdp-img" id="pdpImg">${productVisual(p)}</div>
       <div class="pdp-info">
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           ${u ? `<a href="#/zone/${p.zone}" data-close class="tag"><span class="sw sw-${p.zone}"></span>${esc(u.name)}</a>` : ""}
+          ${pi.sale ? `<span class="tag tag-sale">${esc(pi.sale.name)}</span>` : ""}
           ${st.share !== null && st.share >= .9 ? `<span class="tag tag-bio">${num(st.share * 100)} % fibres certifiées</span>` : ""}
         </div>
         <h2>${esc(p.name)}</h2>
-        <div class="price">${money(p.price)}${p.oldPrice && +p.oldPrice > +p.price ? `<s>${money(p.oldPrice)}</s>` : ""}</div>
+        <div class="price" id="pdpPrice"></div>
         <p class="muted" style="margin:0">${esc(p.description)}</p>
-        <div style="display:grid;gap:10px"><span class="label">Taille</span>
+        ${colors.length > 1 ? `<div class="opt"><span class="label">Coloris · <b id="colorName">${esc(color.name)}</b></span>
+          <div class="swatches" id="pdpColors">${colors.map((c, i) => `<button class="swatch ${i ? "" : "active"}" data-c="${i}" style="--c:${esc(c.hex)}" aria-label="${esc(c.name)}" title="${esc(c.name)}"></button>`).join("")}</div></div>` : ""}
+        ${designs.length > 1 ? `<div class="opt"><span class="label">Dessin</span>
+          <div class="designs" id="pdpDesigns">${designs.map((d) => `<button class="design ${d.id === "none" ? "active" : ""}" data-d="${esc(d.id)}">${esc(d.name)}${+d.price ? ` <span class="mono">+${money(d.price)}</span>` : ""}</button>`).join("")}</div></div>` : ""}
+        <div class="opt"><span class="label">Taille</span>
           <div class="sizes" id="pdpSizes">${sizes.map((s) => `<button class="size ${s === size ? "active" : ""}" data-size="${esc(s)}">${esc(s)}</button>`).join("")}</div>
         </div>
         <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap">
           <div class="qty"><button data-q="-1" aria-label="Moins">−</button><span id="pdpQty">1</span><button data-q="1" aria-label="Plus">+</button></div>
-          ${stock <= 0 ? `<span class="stock-low">Épuisé</span>` : stock <= 5 ? `<span class="stock-low">Plus que ${stock} en stock</span>` : `<span class="label">En stock</span>`}
+          ${stock <= 0 ? `<span class="stock-low">Épuisé</span>` : stock <= 5 ? `<span class="stock-low">Plus que ${stock} en stock</span>` : `<span class="label">En stock · expédié sous 48 h</span>`}
         </div>
         <button class="btn btn-block" id="pdpAdd" ${stock <= 0 ? "disabled" : ""}>Ajouter au panier</button>
-        ${visibleMats.length || p.spec.madeIn || p.spec.care ? `<div class="compo">
+        <div class="compo">
+          <div class="compo-row"><span class="label">Marquage</span><div>Logo SKX brodé en bas à gauche${COLLAR[p.type] ? " · étiquette SKX dans le col" : " · étiquette tissée SKX"}</div></div>
           ${visibleMats.length ? `<div class="compo-row"><span class="label">Composition</span><div>${visibleMats.map((m) => `${esc(m.composition)} <span class="muted">· ${esc(m.name)}</span>`).join("<br>")}</div></div>` : ""}
           ${visibleMats.length ? `<div class="compo-row"><span class="label">Certifications</span><div class="certs">${[...new Set(visibleMats.flatMap((m) => m.certifications || []))].map((c) => `<span class="cert">${esc(c)}</span>`).join("")}</div></div>` : ""}
           ${p.spec.madeIn ? `<div class="compo-row"><span class="label">Fabrication</span><div>${esc(p.spec.madeIn)}</div></div>` : ""}
           ${p.spec.care ? `<div class="compo-row"><span class="label">Entretien</span><div>${esc(p.spec.care)}</div></div>` : ""}
-        </div>` : ""}
+        </div>
+        ${recos.length ? `<div class="opt"><span class="label">Complète la tenue</span><div class="minis">${recos.map(miniCard).join("")}</div></div>` : ""}
         <span class="label">Livraison offerte dès ${money(S().freeShippingFrom)} · Retours 30 jours</span>
       </div>
     </div>`);
+    const surcharge = () => +(designById(design)?.price || 0);
+    const refresh = () => {
+      const unit = pi.now + surcharge();
+      $("#pdpPrice", box).innerHTML = `${money(unit)}${pi.was ? `<s>${money(pi.was + surcharge())}</s>` : ""}`;
+      const custom = color !== colors[0] || design !== "none";
+      $("#pdpImg", box).innerHTML = productVisual(p, { color: color.hex, design, custom });
+    };
+    refresh();
+    $("#pdpColors", box)?.addEventListener("click", (e) => {
+      const b = e.target.closest("[data-c]"); if (!b) return;
+      color = colors[+b.dataset.c]; $("#colorName", box).textContent = color.name;
+      $$(".swatch", box).forEach((x) => x.classList.toggle("active", x === b)); refresh();
+    });
+    $("#pdpDesigns", box)?.addEventListener("click", (e) => {
+      const b = e.target.closest("[data-d]"); if (!b) return;
+      design = b.dataset.d; $$(".design", box).forEach((x) => x.classList.toggle("active", x === b)); refresh();
+    });
     $("#pdpSizes", box).addEventListener("click", (e) => {
       const b = e.target.closest("[data-size]"); if (!b) return;
       size = b.dataset.size; $$(".size", box).forEach((x) => x.classList.toggle("active", x === b));
@@ -286,59 +389,101 @@
     }));
     $("#pdpAdd").addEventListener("click", () => {
       if (!size) { toast("Choisis une taille."); return; }
-      addToCart(p.id, size, qty); closeModal();
+      addToCart({ id: p.id, size, qty, color: colors.length > 1 ? color.name : "", colorHex: color.hex, design }); closeModal(); openCart();
     });
   }
 
   /* ---------- Panier ---------- */
   let cart = store.get("skx_cart", []);
+  let promo = store.get("skx_promo", null);
+  let gift = false;
+  const lineKey = (l) => [l.id, l.size, l.color || "", l.design || "none"].join("|");
   const saveCart = () => { cart = cart.filter((l) => productById(l.id)); store.set("skx_cart", cart); renderCart(); };
-  function addToCart(id, size, qty) {
-    const p = productById(id);
-    const line = cart.find((l) => l.id === id && l.size === size);
-    const inCart = cart.filter((l) => l.id === id).reduce((a, l) => a + l.qty, 0);
+  function addToCart(item) {
+    const p = productById(item.id);
+    const inCart = cart.filter((l) => l.id === item.id).reduce((a, l) => a + l.qty, 0);
     const max = (+p.stock || 0) - inCart;
     if (max <= 0) { toast("Tout le stock disponible est déjà dans ton panier."); return; }
-    qty = Math.min(qty, max);
-    if (line) line.qty += qty; else cart.push({ id, size, qty });
+    const qty = Math.min(item.qty, max);
+    const line = cart.find((l) => lineKey(l) === lineKey(item));
+    if (line) line.qty += qty; else cart.push({ ...item, qty });
     saveCart();
     const c = $("#cartCount"); c.classList.remove("bump"); void c.offsetWidth; c.classList.add("bump");
-    toast(`${p.name}, taille ${size}, ajouté au panier.`);
+  }
+  function lineUnit(l) {
+    const p = productById(l.id);
+    return priceInfo(p).now + +(designById(l.design)?.price || 0);
   }
   function totals() {
-    const sub = cart.reduce((a, l) => a + (productById(l.id)?.price || 0) * l.qty, 0);
-    const ship = sub === 0 || sub >= +S().freeShippingFrom ? 0 : +S().shippingPrice;
-    return { sub, ship, total: sub + ship };
+    const pr = P();
+    let sub = 0, eligible = 0, count = 0;
+    for (const l of cart) {
+      const p = productById(l.id); if (!p) continue;
+      const amount = lineUnit(l) * l.qty;
+      sub += amount; count += l.qty;
+      if (!saleFor(p)) eligible += amount;
+    }
+    let code = promo ? findCode(promo.code) : null;
+    if (promo && !code) { promo = null; store.del("skx_promo"); }
+    let discount = 0, discountLabel = "";
+    if (code) {
+      const pct = Math.min(+code.percent || 0, +pr.maxCode || 70);
+      discount = round2(eligible * pct / 100); discountLabel = `Code ${normCode(promo.code)} (−${pct} %)`;
+    } else if (pr.volume?.enabled) {
+      const tier = (pr.volume.tiers || []).filter((t) => count >= +t.qty).sort((a, b) => b.percent - a.percent)[0];
+      if (tier) { discount = round2(sub * Math.min(+tier.percent, 50) / 100); discountLabel = `Remise ${tier.qty} pièces et + (−${tier.percent} %)`; }
+    }
+    const afterDisc = sub - discount;
+    const giftPrice = gift && pr.giftWrap?.enabled ? +pr.giftWrap.price || 0 : 0;
+    const ship = sub === 0 || afterDisc >= +S().freeShippingFrom ? 0 : +S().shippingPrice;
+    return { sub: round2(sub), discount, discountLabel, gift: giftPrice, ship, total: round2(afterDisc + giftPrice + ship), count, afterDisc };
+  }
+  function nextTier(count) {
+    const v = P().volume; if (!v?.enabled || promo) return null;
+    return (v.tiers || []).filter((t) => +t.qty > count).sort((a, b) => a.qty - b.qty)[0] || null;
   }
   function renderCart() {
     cart = cart.filter((l) => productById(l.id));
     $("#cartCount").textContent = cart.reduce((a, l) => a + l.qty, 0);
     const body = $("#cartItems"), foot = $("#cartFoot");
     if (!cart.length) {
-      body.innerHTML = `<div class="empty" style="margin-top:20px">Ton panier est vide.<br><br><a class="btn btn-sm" href="#/boutique" data-closecart>Voir la boutique</a></div>`;
+      const recos = recommend([], 3);
+      body.innerHTML = `<div class="empty" style="margin-top:20px">Ton panier est vide.<br><br><a class="btn btn-sm" href="#/boutique" data-closecart>Voir la boutique</a></div>
+        ${recos.length ? `<div class="opt" style="margin-top:20px"><span class="label">À découvrir</span><div class="minis">${recos.map(miniCard).join("")}</div></div>` : ""}`;
       foot.innerHTML = ""; return;
     }
-    body.innerHTML = cart.map((l, i) => {
-      const p = productById(l.id);
-      return `<div class="line">
-        <div class="line-img">${productVisual(p)}</div>
-        <div style="display:grid;gap:4px"><b style="font-weight:500">${esc(p.name)}</b><span class="label">Taille ${esc(l.size)} · ${money(p.price)}</span>
-          <div style="display:flex;gap:12px;align-items:center;margin-top:6px">
-            <div class="qty"><button data-cq="${i}" data-d="-1" aria-label="Moins">−</button><span>${l.qty}</span><button data-cq="${i}" data-d="1" aria-label="Plus">+</button></div>
-            <button class="rm" data-rm="${i}">Retirer</button>
-          </div></div>
-        <span class="price">${money(p.price * l.qty)}</span>
-      </div>`;
-    }).join("");
     const t = totals();
-    const left = +S().freeShippingFrom - t.sub;
-    foot.innerHTML = `<div class="totals">
+    const free = +S().freeShippingFrom, left = free - t.afterDisc, pct = Math.min(100, (t.afterDisc / free) * 100);
+    const nt = nextTier(t.count);
+    const recos = recommend(cart.map((l) => l.id), 3);
+    body.innerHTML = `<div class="ship-bar"><span class="label">${left > 0 ? `Plus que <b>${money(left)}</b> pour la livraison offerte` : "Livraison offerte"}</span><div class="bar"><i style="width:${pct}%"></i></div></div>
+      ${nt ? `<p class="label" style="margin:8px 0 0">Ajoute ${nt.qty - t.count} pièce${nt.qty - t.count > 1 ? "s" : ""} : −${nt.percent} % sur tout le panier</p>` : ""}
+      ${cart.map((l, i) => {
+        const p = productById(l.id), d = designById(l.design);
+        return `<div class="line">
+          <div class="line-img">${productVisual(p, { color: l.colorHex, design: l.design, custom: !!(l.color || (l.design && l.design !== "none")) })}</div>
+          <div style="display:grid;gap:4px"><b style="font-weight:500">${esc(p.name)}</b>
+            <span class="label">Taille ${esc(l.size)}${l.color ? " · " + esc(l.color) : ""}${d && d.id !== "none" ? " · " + esc(d.name) : ""}</span>
+            <span class="label">${money(lineUnit(l))}${saleFor(p) ? " · soldé" : ""}</span>
+            <div style="display:flex;gap:12px;align-items:center;margin-top:6px">
+              <div class="qty"><button data-cq="${i}" data-d="-1" aria-label="Moins">−</button><span>${l.qty}</span><button data-cq="${i}" data-d="1" aria-label="Plus">+</button></div>
+              <button class="rm" data-rm="${i}">Retirer</button>
+            </div></div>
+          <span class="price">${money(lineUnit(l) * l.qty)}</span>
+        </div>`;
+      }).join("")}
+      ${recos.length ? `<div class="opt" style="margin-top:18px"><span class="label">Complète la tenue</span><div class="minis">${recos.map(miniCard).join("")}</div></div>` : ""}`;
+    foot.innerHTML = `
+      <form class="promo-form" id="promoForm">${promo ? `<span class="label">Code <b>${esc(normCode(promo.code))}</b> appliqué</span><button type="button" class="rm" id="promoRm">Retirer</button>` : `<input id="promoInput" placeholder="Code promo" aria-label="Code promo" autocomplete="off"><button class="btn btn-ghost btn-sm">Appliquer</button>`}</form>
+      ${P().giftWrap?.enabled ? `<label class="check gift"><input type="checkbox" id="giftWrap" ${gift ? "checked" : ""}> Emballage cadeau (+${money(P().giftWrap.price)})</label>` : ""}
+      <div class="totals">
         <div><span>Sous-total</span><span class="price">${money(t.sub)}</span></div>
+        ${t.discount ? `<div class="disc"><span>${esc(t.discountLabel)}</span><span class="price">−${money(t.discount)}</span></div>` : ""}
+        ${t.gift ? `<div><span>Emballage cadeau</span><span class="price">${money(t.gift)}</span></div>` : ""}
         <div><span>Livraison</span><span class="price">${t.ship ? money(t.ship) : "Offerte"}</span></div>
-        ${left > 0 ? `<span class="label">Plus que ${money(left)} pour la livraison offerte</span>` : ""}
         <div class="total"><span>Total</span><span class="price">${money(t.total)}</span></div>
       </div>
-      <button class="btn btn-block" id="checkoutBtn" style="margin-top:16px">Commander</button>`;
+      <button class="btn btn-block" id="checkoutBtn" style="margin-top:14px">Commander · ${money(t.total)}</button>`;
   }
   $("#cartItems").addEventListener("click", (e) => {
     const q = e.target.closest("[data-cq]"), rm = e.target.closest("[data-rm]");
@@ -350,8 +495,22 @@
     }
     if (rm) { cart.splice(+rm.dataset.rm, 1); saveCart(); }
     if (e.target.closest("[data-closecart]")) closeCart();
+    if (e.target.closest("[data-product]")) closeCart();
   });
-  $("#cartFoot").addEventListener("click", (e) => { if (e.target.id === "checkoutBtn") checkout(); });
+  $("#cartFoot").addEventListener("click", (e) => {
+    if (e.target.id === "checkoutBtn") checkout();
+    if (e.target.id === "promoRm") { promo = null; store.del("skx_promo"); renderCart(); }
+  });
+  $("#cartFoot").addEventListener("change", (e) => { if (e.target.id === "giftWrap") { gift = e.target.checked; renderCart(); } });
+  $("#cartFoot").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const v = $("#promoInput")?.value || "";
+    if (!v.trim()) return;
+    const c = findCode(v);
+    if (!c) { toast("Code inconnu ou expiré."); return; }
+    promo = { code: normCode(v) }; store.set("skx_promo", promo);
+    toast(`Code appliqué : −${Math.min(+c.percent, +P().maxCode || 70)} % (hors articles soldés).`); renderCart();
+  });
   function openCart() { renderCart(); $("#drawer").classList.add("open"); $("#overlay").classList.add("open"); }
   function closeCart() { $("#drawer").classList.remove("open"); $("#overlay").classList.remove("open"); }
   $("#cartBtn").addEventListener("click", openCart);
@@ -364,13 +523,13 @@
     const t = totals();
     openModal(`<div class="modal-pad">
       <h2>Finaliser la commande</h2>
-      <p class="muted" style="margin:0 0 20px">Total : <span class="price" style="color:var(--text)">${money(t.total)}</span></p>
+      <p class="muted" style="margin:0 0 20px">Total : <span class="price" style="color:var(--text)">${money(t.total)}</span>${t.discount ? ` · dont ${money(t.discount)} de remise` : ""}</p>
       <form class="form" id="orderForm">
         <div class="row"><label><span>Prénom</span><input id="o-prenom" name="prenom" required autocomplete="given-name"></label><label><span>Nom</span><input id="o-nom" name="nom" required autocomplete="family-name"></label></div>
         <div class="row"><label><span>Email</span><input id="o-email" type="email" name="email" required autocomplete="email"></label><label><span>Téléphone</span><input id="o-tel" name="tel" autocomplete="tel"></label></div>
         <label><span>Adresse</span><input id="o-adresse" name="adresse" required autocomplete="street-address"></label>
         <div class="row"><label><span>Code postal</span><input id="o-cp" name="cp" required autocomplete="postal-code"></label><label><span>Ville</span><input id="o-ville" name="ville" required autocomplete="address-level2"></label></div>
-        <label><span>Message</span><textarea id="o-message" name="message" placeholder="Optionnel"></textarea></label>
+        <label><span>Message</span><textarea id="o-message" name="message" placeholder="Optionnel${gift ? " — mot pour le cadeau" : ""}"></textarea></label>
         <button class="btn btn-block">Valider la commande</button>
       </form>
     </div>`, 560);
@@ -378,12 +537,14 @@
       e.preventDefault();
       const btn = $("button", e.target); btn.disabled = true; btn.textContent = "Envoi…";
       const customer = Object.fromEntries(new FormData(e.target));
+      const tt = totals();
       const order = {
         ref: "SKX-" + Date.now().toString(36).toUpperCase(),
         date: new Date().toISOString(),
         customer,
-        items: cart.map((l) => { const p = productById(l.id); return { id: p.id, name: p.name, size: l.size, qty: l.qty, price: p.price }; }),
-        ...totals()
+        items: cart.map((l) => { const p = productById(l.id); const d = designById(l.design); return { id: p.id, name: p.name, size: l.size, color: l.color || "", design: d && d.id !== "none" ? d.name : "", qty: l.qty, price: lineUnit(l) }; }),
+        promoCode: promo ? normCode(promo.code) : "", giftWrap: gift,
+        ...tt
       };
       let sent = false;
       if (S().orderEndpoint) {
@@ -393,14 +554,15 @@
         } catch { sent = false; }
       }
       const orders = store.get("skx_orders", []); orders.unshift(order); store.set("skx_orders", orders);
-      cart = []; saveCart();
+      cart = []; promo = null; gift = false; store.del("skx_promo"); saveCart();
       orderDone(order, sent);
     });
   }
   function orderText(o) {
     const c = o.customer;
-    return `Commande ${o.ref}\n\n` + o.items.map((i) => `- ${i.name} (${i.size}) x${i.qty} : ${money(i.price * i.qty)}`).join("\n") +
-      `\n\nSous-total : ${money(o.sub)}\nLivraison : ${o.ship ? money(o.ship) : "Offerte"}\nTOTAL : ${money(o.total)}\n\n` +
+    return `Commande ${o.ref}\n\n` + o.items.map((i) => `- ${i.name} (${i.size}${i.color ? ", " + i.color : ""}${i.design ? ", dessin " + i.design : ""}) x${i.qty} : ${money(i.price * i.qty)}`).join("\n") +
+      `\n\nSous-total : ${money(o.sub)}` + (o.discount ? `\n${o.discountLabel} : -${money(o.discount)}` : "") + (o.gift ? `\nEmballage cadeau : ${money(o.gift)}` : "") +
+      `\nLivraison : ${o.ship ? money(o.ship) : "Offerte"}\nTOTAL : ${money(o.total)}\n\n` +
       `${c.prenom} ${c.nom}\n${c.adresse}\n${c.cp} ${c.ville}\n${c.email} ${c.tel || ""}\n${c.message ? "\nMessage : " + c.message : ""}`;
   }
   function orderDone(o, sent) {
@@ -475,11 +637,15 @@
           <ol class="mini-timeline">${slides.map((sl) => `<li><span class="mono">${esc(sl.year)}</span><span>${esc(sl.title)}</span></li>`).join("")}</ol>
         </div>
       </div></section>` : ""}
+      ${seen().length >= 2 ? `<section class="section" style="padding-top:0"><div class="container">
+        <div class="section-head"><div><h2>Vus récemment</h2><p>Reprends là où tu t'es arrêté.</p></div></div>
+        ${grid(seen().slice(0, 4).map(productById))}
+      </div></section>` : ""}
       <section class="section" style="padding-top:0"><div class="container perks">
+        <div class="perk"><b>Personnalise</b><span>coloris et dessin au choix</span></div>
         <div class="perk"><b>Du XS au 3XL</b><span>Homme, Femme, Enfants</span></div>
         <div class="perk"><b>Livraison offerte</b><span>dès ${money(s.freeShippingFrom)} d'achat</span></div>
-        <div class="perk"><b>Retours 30 jours</b><span>simples et gratuits</span></div>
-        <div class="perk"><b>Matières certifiées</b><span><a class="link" href="#/matieres">bio et recyclées</a></span></div>
+        <div class="perk"><b>Retours 30 jours</b><span><a class="link" href="#/guide">voir le guide</a></span></div>
       </div></section>`;
     mountScenes();
   }
@@ -610,16 +776,64 @@
   }
 
   /* L'équipe SKX (page publique) */
+  /* Avatars illustrés (style SKX, réglables dans l'espace équipe) */
+  const AV_HAIR = { court: "Court", meche: "Mèche", boucle: "Bouclé", long: "Long", rase: "Rasé" };
+  const AV_FACIAL = { aucune: "Aucune", barbe: "Barbe", moustache: "Moustache", bouc: "Bouc" };
+  const AV_ACC = { aucun: "Aucun", lunettes: "Lunettes", casquette: "Casquette", bonnet: "Bonnet", casque: "Casque audio" };
+  const AV_BG = { streetwear: ["#05070a", "#1e2830", "#5c6874"], sport: ["#0a1219", "#24394a", "#7d98a8"], premiere: ["#0b0704", "#3a2410", "#b9823d"], accessoires: ["#0c0d0e", "#25282b", "#6d7277"], cool: ["#0d0809", "#3a2026", "#a35a45"] };
+  function avatarSVG(m) {
+    const a = m.avatar || {};
+    const [b0, b1, b2] = AV_BG[a.bg] || AV_BG.streetwear;
+    const skin = a.skin || "#cbc3b4", hc = a.hairColor || "#1b1a19", top = a.top || "#1c1f22";
+    const g = "a" + Math.random().toString(36).slice(2, 7);
+    const shade = "rgba(0,0,0,.18)";
+    const hair = {
+      court: `<path d="M64 108 Q60 64 100 60 Q142 64 136 108 Q132 86 118 80 Q100 88 80 80 Q68 88 64 108 Z" fill="${hc}"/>`,
+      meche: `<path d="M64 110 Q58 62 104 58 Q146 62 138 104 Q134 84 122 78 Q96 92 70 84 Q66 94 64 110 Z" fill="${hc}"/><path d="M70 84 Q96 66 140 70 Q130 60 104 58 Q76 60 70 84 Z" fill="${hc}"/>`,
+      boucle: [[68, 92], [76, 76], [90, 66], [106, 63], [122, 68], [133, 80], [136, 96], [64, 106], [138, 108], [82, 70], [114, 64]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="11" fill="${hc}"/>`).join(""),
+      long: `<path d="M62 150 Q54 70 100 60 Q148 70 138 150 Q136 112 130 92 Q100 84 70 92 Q64 112 62 150 Z" fill="${hc}"/>`,
+      rase: `<path d="M66 104 Q64 66 100 64 Q136 66 134 104 Q128 82 100 80 Q72 82 66 104 Z" fill="${hc}" opacity=".45"/>`
+    }[a.hair] || "";
+    const facial = {
+      barbe: `<path d="M67 112 Q68 152 100 156 Q132 152 133 112 Q128 132 116 138 Q100 144 84 138 Q72 132 67 112 Z" fill="${hc}"/>`,
+      moustache: `<path d="M88 128 Q100 122 112 128 Q100 126 88 128 Z" fill="${hc}" stroke="${hc}" stroke-width="3" stroke-linejoin="round"/>`,
+      bouc: `<path d="M92 136 Q100 152 108 136 Q100 140 92 136 Z" fill="${hc}"/>`
+    }[a.facial] || "";
+    const acc = {
+      lunettes: `<g fill="rgba(255,255,255,.08)" stroke="#111" stroke-width="2.4"><rect x="74" y="104" width="22" height="15" rx="4"/><rect x="104" y="104" width="22" height="15" rx="4"/><path d="M96 110 H104 M74 109 L66 106 M126 109 L134 106" fill="none"/></g>`,
+      casquette: `<path d="M64 98 Q64 60 100 58 Q136 60 136 98 Z" fill="${top}"/><path d="M60 98 L150 98 Q156 106 140 108 L60 104 Z" fill="${top}" stroke="rgba(0,0,0,.35)"/><text x="100" y="88" text-anchor="middle" font-family="Pirata One, serif" font-size="12" fill="#eee">SKX</text>`,
+      bonnet: `<path d="M64 102 Q62 54 100 52 Q138 54 136 102 Z" fill="${top}"/><rect x="62" y="92" width="76" height="14" rx="3" fill="${top}" stroke="rgba(0,0,0,.3)"/><text x="100" y="103" text-anchor="middle" font-family="Pirata One, serif" font-size="9" fill="#eee">SKX</text>`,
+      casque: `<path d="M62 112 Q60 52 100 50 Q140 52 138 112" fill="none" stroke="#111" stroke-width="6"/><rect x="54" y="102" width="14" height="26" rx="6" fill="#111"/><rect x="132" y="102" width="14" height="26" rx="6" fill="#111"/>`
+    }[a.acc] || "";
+    return `<svg viewBox="0 0 200 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${esc(m.name)}">
+      <defs><linearGradient id="${g}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${b0}"/><stop offset=".6" stop-color="${b1}"/><stop offset="1" stop-color="${b2}"/></linearGradient></defs>
+      <rect width="200" height="250" fill="url(#${g})"/>
+      <path d="M0 170 L30 130 L52 150 L84 104 L112 146 L140 118 L170 150 L200 126 V250 H0 Z" fill="${b0}" opacity=".55"/>
+      <path d="M84 104 L76 116 L84 114 L90 120 L94 112 Z M140 118 L134 128 L141 126 L146 130 Z" fill="#fff" opacity=".25"/>
+      <path d="M28 250 Q32 186 100 176 Q168 186 172 250 Z" fill="${top}"/>
+      <path d="M70 182 Q100 206 130 182 Q118 196 100 198 Q82 196 70 182 Z" fill="${shade}"/>
+      <path d="M100 200 V250" stroke="rgba(255,255,255,.08)"/>
+      <text x="52" y="238" font-family="Pirata One, serif" font-size="10" fill="#eee" opacity=".85">SKX</text>
+      <rect x="88" y="150" width="24" height="30" rx="8" fill="${skin}"/><rect x="88" y="150" width="24" height="12" fill="${shade}"/>
+      <ellipse cx="66" cy="114" rx="6" ry="9" fill="${skin}"/><ellipse cx="134" cy="114" rx="6" ry="9" fill="${skin}"/>
+      <ellipse cx="100" cy="110" rx="34" ry="42" fill="${skin}"/>
+      <path d="M100 68 Q134 72 134 110 Q132 140 112 150 Q128 128 126 104 Q122 80 100 68 Z" fill="${shade}"/>
+      ${hair}${facial}
+      <ellipse cx="86" cy="112" rx="2.6" ry="3" fill="#161514"/><ellipse cx="114" cy="112" rx="2.6" ry="3" fill="#161514"/>
+      <path d="M93 134 Q100 138 107 134" fill="none" stroke="#161514" stroke-width="1.6" stroke-linecap="round" opacity="${a.facial === "barbe" || a.facial === "moustache" ? 0 : .7}"/>
+      ${acc}
+    </svg>`;
+  }
   function pagePeople() {
     const P = DATA.people;
     app.innerHTML = `<section class="section"><div class="container">
-      <div class="section-head"><div><span class="label">Du fondateur aux collaborateurs</span><h2>L'équipe SKX</h2><p>Les personnes qui pensent, dessinent et fabriquent SKX.</p></div></div>
+      <div class="section-head"><div><span class="label">Du fondateur aux collaborateurs</span><h2>L'équipe SKX</h2><p>Les personnes qui pensent, dessinent et font vivre SKX.</p></div></div>
       ${P.length ? `<div class="people">${P.map((m, i) => `<article class="person ${i === 0 ? "person-lead" : ""}">
-        <div class="person-photo">${m.photo ? `<img src="${esc(m.photo)}" alt="${esc(m.name)}">` : `<div class="js-scene" data-scene="${ZONE_IDS[i % ZONE_IDS.length]}" data-density=".4"></div><span class="person-initials">${esc(m.name.split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase())}</span>`}</div>
-        <div class="person-body"><span class="label">${esc(m.title)}${m.since ? " · depuis " + esc(m.since) : ""}</span><h3>${esc(m.name)}</h3><p>${esc(m.bio)}</p></div>
+        <div class="person-photo">${m.photo ? `<img src="${esc(m.photo)}" alt="${esc(m.name)}">` : avatarSVG(m)}</div>
+        <div class="person-body"><span class="label">${esc(m.title)}${m.since ? " · depuis " + esc(m.since) : ""}</span><h3>${esc(m.name)}</h3><p>${esc(m.bio)}</p>
+          ${m.quote ? `<blockquote class="quote">« ${esc(m.quote)} »</blockquote>` : ""}</div>
       </article>`).join("")}</div>` : `<div class="empty">L'équipe sera présentée ici.</div>`}
     </div></section>`;
-    mountScenes();
   }
 
   function pageMatieres() {
@@ -644,19 +858,39 @@
     </div></section>`;
   }
 
-  function pageInfos() {
-    const s = S();
+  function pageGuide() {
+    const s = S(), pr = P();
     app.innerHTML = `<section class="section"><div class="container prose">
-      <div class="section-head" style="margin-bottom:0"><div><h2 style="margin:0">Infos</h2></div></div>
-      <h2>Livraison</h2>
+      <div class="section-head" style="margin-bottom:0"><div><span class="label">Guide</span><h2 style="margin:0">Livraison, tailles et plus</h2></div></div>
+      <nav class="guide-toc">${[["livraison", "Livraison"], ["retours", "Retours"], ["tailles", "Tailles"], ["perso", "Personnalisation"], ["promos", "Soldes et codes"], ["marquage", "Marquage SKX"], ["entretien", "Entretien"]].map(([k, v]) => `<a class="chip" href="#g-${k}" data-anchor="g-${k}">${v}</a>`).join("")}</nav>
+      <h2 id="g-livraison">Livraison</h2>
       <p>Expédition sous 48 h ouvrées. Livraison à ${money(s.shippingPrice)}, offerte dès ${money(s.freeShippingFrom)} d'achat.</p>
-      <h2>Retours</h2>
-      <p>Tu as 30 jours pour changer d'avis. Les articles doivent être neufs, non portés, avec leurs étiquettes.${s.contactEmail ? ` Écris-nous à <a class="link" href="mailto:${esc(s.contactEmail)}">${esc(s.contactEmail)}</a>.` : ""}</p>
-      <h2>Guide des tailles</h2>
+      <h2 id="g-retours">Retours</h2>
+      <p>Tu as 30 jours pour changer d'avis. Les articles doivent être neufs, non portés, avec leurs étiquettes. Les pièces personnalisées (motif ajouté) ne sont ni reprises ni échangées, sauf défaut.${s.contactEmail ? ` Écris-nous à <a class="link" href="mailto:${esc(s.contactEmail)}">${esc(s.contactEmail)}</a>.` : ""}</p>
+      <h2 id="g-tailles">Guide des tailles</h2>
+      <p>Homme, Femme et Enfants : du XS au 3XL.</p>
       <div class="table-wrap"><table class="table"><thead><tr><th>Taille</th><th class="num">Poitrine (cm)</th><th class="num">Taille (cm)</th><th class="num">Longueur (cm)</th></tr></thead><tbody>
-        ${[["XS", "86–90", "72–76", 66], ["S", "90–96", "76–82", 69], ["M", "96–102", "82–88", 72], ["L", "102–108", "88–94", 74], ["XL", "108–116", "94–102", 76], ["XXL", "116–124", "102–110", 78]].map((r) => `<tr><td class="mono">${r[0]}</td><td class="num">${r[1]}</td><td class="num">${r[2]}</td><td class="num">${r[3]}</td></tr>`).join("")}
+        ${[["XS", "86–90", "72–76", 66], ["S", "90–96", "76–82", 69], ["M", "96–102", "82–88", 72], ["L", "102–108", "88–94", 74], ["XL", "108–116", "94–102", 76], ["2XL", "116–124", "102–110", 78], ["3XL", "124–132", "110–118", 80]].map((r) => `<tr><td class="mono">${r[0]}</td><td class="num">${r[1]}</td><td class="num">${r[2]}</td><td class="num">${r[3]}</td></tr>`).join("")}
       </tbody></table></div>
       <p>Les coupes SKX sont amples. Prends ta taille habituelle pour un tombé oversize, une taille en dessous pour un tombé ajusté.</p>
+      <h2 id="g-perso">Personnalisation</h2>
+      <p>Sur les pièces marquées personnalisables, choisis ton coloris et ajoute un dessin : ${(DATA.designs || []).filter((d) => d.enabled && d.id !== "none").map((d) => `${esc(d.name)} (+${money(d.price)})`).join(", ")}. L'aperçu se met à jour en direct sur la fiche produit.</p>
+      <h2 id="g-promos">Soldes et codes promo</h2>
+      <p>Soldes d'hiver et d'été sur les fins de stock, jusqu'à −${pr.maxSale} %. Les codes promo s'appliquent aux articles non soldés et ne se cumulent pas avec la remise par quantité.</p>
+      <h2 id="g-marquage">Marquage SKX</h2>
+      <p>Chaque pièce porte le logo SKX brodé en bas à gauche, et une étiquette SKX dans le col ou sur l'étiquette intérieure.</p>
+      <h2 id="g-entretien">Entretien</h2>
+      <p>Lavage à 30 °C à l'envers, pas de sèche-linge pour les molletons, séchage à plat pour les mailles. Le détail est indiqué sur chaque fiche produit.</p>
+    </div></section>`;
+    $(".guide-toc", app).addEventListener("click", (e) => { const a = e.target.closest("[data-anchor]"); if (!a) return; e.preventDefault(); document.getElementById(a.dataset.anchor)?.scrollIntoView({ behavior: "smooth" }); });
+  }
+
+  function pageSoldes() {
+    const list = DATA.products.filter((p) => saleFor(p));
+    const sales = activeSales();
+    app.innerHTML = `<section class="section"><div class="container">
+      <div class="section-head"><div><span class="label">${sales.map((x) => esc(x.name)).join(" · ") || "Soldes"}</span><h2>Soldes</h2><p>Fins de stock, jusqu'à −${P().maxSale} %. Quand c'est parti, c'est parti.</p></div></div>
+      ${grid(list)}
     </div></section>`;
   }
 
@@ -894,12 +1128,13 @@
           <label><span>Stock</span><input id="pf-stock" name="stock" type="number" min="0" value="${+p.stock || 0}"></label>
         </div>
         <label><span>Tailles <span class="hint">séparées par des virgules</span></span><input id="pf-sizes" name="sizes" value="${esc((p.sizes || []).join(", "))}"></label>
+        <label><span>Coloris <span class="hint">Nom:#couleur, séparés par des virgules — le premier est le coloris principal</span></span><input id="pf-colors" name="colors" value="${esc((p.colors || []).map((c) => c.name + ":" + c.hex).join(", "))}" placeholder="Noir:#18191b, Sable:#c8b79a"></label>
+        <label class="check"><input type="checkbox" id="pf-custom" name="customizable" ${p.customizable ? "checked" : ""}> Personnalisable (dessins au choix)</label>
         <label><span>Description</span><textarea id="pf-desc" name="description">${esc(p.description)}</textarea></label>
         <div class="row" style="align-items:start">
           <div class="form">
             <label><span>Photo <span class="hint">lien ou chemin assets/…</span></span><input name="image" id="pImg" value="${esc(p.image && p.image.startsWith("data:") ? "" : p.image)}" placeholder="assets/produits/hoodie.jpg"></label>
             <label class="btn btn-ghost btn-sm" style="cursor:pointer;justify-self:start">Importer une photo<input type="file" id="pFile" accept="image/*" hidden></label>
-            <label><span>Couleur du dessin</span><input id="pf-color" name="color" type="color" value="${esc(p.color || "#c9c4b8")}" style="height:42px;padding:4px"></label>
             <label class="check"><input type="checkbox" id="pf-feat" name="featured" ${p.featured ? "checked" : ""}> Mettre en avant sur l'accueil</label>
           </div>
           <div style="display:grid;gap:8px;justify-items:start"><div class="img-preview" id="pPrev"></div><button type="button" class="btn btn-ghost btn-sm" id="pClearImg">Retirer la photo</button></div>
@@ -910,9 +1145,13 @@
     const form = $("#pForm", box);
     const read = () => {
       const f = Object.fromEntries(new FormData(form));
-      p.name = f.name.trim(); p.zone = f.zone; p.gender = f.gender; p.type = f.type; p.color = f.color;
+      p.name = f.name.trim(); p.zone = f.zone; p.gender = f.gender; p.type = f.type;
       p.price = Math.max(0, +f.price || 0); p.oldPrice = f.oldPrice ? +f.oldPrice : null;
       p.sizes = f.sizes.split(",").map((s) => s.trim()).filter(Boolean); if (!p.sizes.length) p.sizes = ["Unique"];
+      const cols = (f.colors || "").split(",").map((x) => { const [n, h] = x.split(":").map((y) => (y || "").trim()); return /^#[0-9a-f]{6}$/i.test(h || "") ? { name: n || h, hex: h } : null; }).filter(Boolean);
+      p.colors = cols.length ? cols : [{ name: "Unique", hex: p.color || "#c9c4b8" }];
+      p.color = p.colors[0].hex;
+      p.customizable = !!f.customizable;
       p.stock = Math.max(0, parseInt(f.stock) || 0); p.description = f.description.trim(); p.featured = !!f.featured;
       if (f.image.trim()) p.image = f.image.trim(); else if (!(p.image || "").startsWith("data:")) p.image = "";
     };
@@ -1056,7 +1295,7 @@
         <img src="assets/logo-skx-small.png" alt="SKX">
       </div>
       <div class="cols">
-        <div><div class="flat">${productVisual(p, true)}</div></div>
+        <div><div class="flat">${productVisual(p, { light: true })}</div></div>
         <div>
           <h4>Fabrication</h4><p>${esc(p.spec.workshop || "—")} · ${esc(p.spec.madeIn || "—")}</p>
           <h4>Tailles</h4><p>${esc((p.sizes || []).join(", "))}</p>
@@ -1260,13 +1499,32 @@
         <div class="row3" style="grid-template-columns:1fr 1fr 120px auto"><label><span>Nom</span><input data-k="name" value="${esc(m.name)}"></label><label><span>Rôle affiché</span><input data-k="title" value="${esc(m.title)}" placeholder="Fondateur, Designer, Atelier…"></label><label><span>Depuis</span><input data-k="since" value="${esc(m.since || "")}"></label>
           <div style="display:flex;gap:6px;align-self:end"><button class="icon-btn" data-up="${i}" ${i ? "" : "disabled"} aria-label="Monter">↑</button><button class="icon-btn" data-rm="${i}" aria-label="Retirer">✕</button></div></div>
         <label><span>Présentation</span><textarea data-k="bio">${esc(m.bio)}</textarea></label>
+        <label><span>Citation</span><textarea data-k="quote" style="min-height:56px">${esc(m.quote || "")}</textarea></label>
+        <div class="av-edit"><div class="av-prev" data-prev="${i}">${avatarSVG(m)}</div>
+          <div class="form" style="flex:1;min-width:240px"><span class="label">Avatar <span class="hint">(utilisé s'il n'y a pas de photo)</span></span>
+            <div class="row3">
+              <label><span>Cheveux</span><select data-av="hair">${Object.entries(AV_HAIR).map(([k, v]) => `<option value="${k}" ${k === m.avatar.hair ? "selected" : ""}>${v}</option>`).join("")}</select></label>
+              <label><span>Visage</span><select data-av="facial">${Object.entries(AV_FACIAL).map(([k, v]) => `<option value="${k}" ${k === m.avatar.facial ? "selected" : ""}>${v}</option>`).join("")}</select></label>
+              <label><span>Accessoire</span><select data-av="acc">${Object.entries(AV_ACC).map(([k, v]) => `<option value="${k}" ${k === m.avatar.acc ? "selected" : ""}>${v}</option>`).join("")}</select></label>
+            </div>
+            <div class="row3" style="grid-template-columns:repeat(4,1fr)">
+              <label><span>Fond</span><select data-av="bg">${ZONE_IDS.map((z) => `<option value="${z}" ${z === m.avatar.bg ? "selected" : ""}>${esc(DATA.zones[z].name)}</option>`).join("")}</select></label>
+              <label><span>Haut</span><input type="color" data-av="top" value="${esc(m.avatar.top)}" style="height:42px;padding:4px"></label>
+              <label><span>Peau</span><input type="color" data-av="skin" value="${esc(m.avatar.skin)}" style="height:42px;padding:4px"></label>
+              <label><span>Cheveux</span><input type="color" data-av="hairColor" value="${esc(m.avatar.hairColor)}" style="height:42px;padding:4px"></label>
+            </div></div></div>
         <div style="display:flex;gap:8px;align-items:end;flex-wrap:wrap"><label style="flex:1;min-width:200px"><span>Photo <span class="hint">lien ou assets/…</span></span><input data-k="photo" value="${esc(m.photo && m.photo.startsWith("data:") ? "" : m.photo || "")}"></label>
           <label class="btn btn-ghost btn-sm" style="cursor:pointer">Importer une photo<input type="file" accept="image/*" data-file="${i}" hidden></label></div>
       </div>`).join("");
       if (role().readOnly) lockReadOnly($("#pList"));
     };
     render();
-    $("#pList").addEventListener("input", (e) => { const b = e.target.closest("[data-i]"); if (b && e.target.dataset.k) P[+b.dataset.i][e.target.dataset.k] = e.target.value; });
+    $("#pList").addEventListener("input", (e) => {
+      const b = e.target.closest("[data-i]"); if (!b) return;
+      const m = P[+b.dataset.i];
+      if (e.target.dataset.k) m[e.target.dataset.k] = e.target.value;
+      if (e.target.dataset.av) { m.avatar[e.target.dataset.av] = e.target.value; $(`[data-prev="${b.dataset.i}"]`, b).innerHTML = avatarSVG(m); }
+    });
     $("#pList").addEventListener("change", async (e) => {
       const f = e.target.closest("[data-file]"); if (!f || !f.files[0]) return;
       try { P[+f.dataset.file].photo = await resizeImage(f.files[0], 700); toast("Photo importée."); } catch { toast("Impossible de lire cette image."); }
@@ -1276,8 +1534,152 @@
       if (up) { const i = +up.dataset.up; P.splice(i - 1, 0, P.splice(i, 1)[0]); render(); }
       if (rm && confirm("Retirer cette personne de la page ?")) { P.splice(+rm.dataset.rm, 1); render(); }
     });
-    $("#pAdd").addEventListener("click", () => { P.push({ id: uid("pp"), name: "", title: "", bio: "", photo: "", since: "" }); render(); });
+    $("#pAdd").addEventListener("click", () => { P.push({ id: uid("pp"), name: "", title: "", bio: "", quote: "", photo: "", since: "", avatar: { hair: "court", facial: "aucune", acc: "aucun", top: "#1c1f22", bg: "streetwear", skin: "#cbc3b4", hairColor: "#1b1a19" } }); render(); });
     $("#pSave").addEventListener("click", () => { DATA.people = P.filter((m) => m.name.trim()); saveDraft(); toast("Page équipe enregistrée."); pageTeam(); });
+  }
+
+  /* --- Promotions : codes, soldes, remises --- */
+  function nthWeekday(y, m, wd, n) { const d = new Date(Date.UTC(y, m, 1)); let c = 0; while (true) { if (d.getUTCDay() === wd && ++c === n) return d; d.setUTCDate(d.getUTCDate() + 1); } }
+  function lastWeekday(y, m, wd) { const d = new Date(Date.UTC(y, m + 1, 0)); while (d.getUTCDay() !== wd) d.setUTCDate(d.getUTCDate() - 1); return d; }
+  const iso = (d) => d.toISOString().slice(0, 10);
+  const plusDays = (d, n) => { const x = new Date(d); x.setUTCDate(x.getUTCDate() + n); return x; };
+  function salePreset(kind) {
+    const now = new Date(), y = now.getUTCFullYear();
+    // Soldes d'hiver : 2e mercredi de janvier · Soldes d'été : dernier mercredi de juin · 4 semaines
+    let start = kind === "hiver" ? nthWeekday(y, 0, 3, 2) : lastWeekday(y, 5, 3);
+    if (plusDays(start, 27) < now) start = kind === "hiver" ? nthWeekday(y + 1, 0, 3, 2) : lastWeekday(y + 1, 5, 3);
+    return { id: uid("sale"), name: kind === "hiver" ? `Soldes d'hiver ${start.getUTCFullYear()}` : `Soldes d'été ${start.getUTCFullYear()}`, start: iso(start), end: iso(plusDays(start, 27)), percent: 30, active: true, productIds: [] };
+  }
+  function tabPromos(el) {
+    const pr = clone(DATA.promos);
+    const t = today();
+    el.innerHTML = `${publishNotice()}
+      <div class="box"><h3>Codes promo pour les proches</h3><p>Réduction maximale : ${pr.maxCode} %. Les codes ne s'appliquent pas aux articles soldés. Ils sont enregistrés chiffrés : note-les bien à la création, on ne peut plus les relire ensuite.</p>
+        <div class="table-wrap"><table class="table"><thead><tr><th>Code</th><th>Pour</th><th class="num">Remise</th><th>Expire</th><th>Actif</th><th></th></tr></thead><tbody>
+          ${pr.codes.map((c, i) => `<tr><td class="mono">${esc(c.hint)}</td><td>${esc(c.note || "—")}</td><td class="num">−${c.percent} %</td><td>${c.expires ? new Date(c.expires).toLocaleDateString("fr-FR") : "—"}${c.expires && c.expires < t ? ` <span class="status status-Arrêté">expiré</span>` : ""}</td>
+            <td><input type="checkbox" data-code-on="${i}" ${c.active ? "checked" : ""} aria-label="Actif"></td><td><div class="actions"><button class="btn btn-danger btn-sm" data-code-del="${i}">Suppr.</button></div></td></tr>`).join("") || `<tr><td colspan="6" class="muted">Aucun code.</td></tr>`}
+        </tbody></table></div>
+        <form class="form" id="codeForm" style="margin-top:16px">
+          <div class="row3" style="grid-template-columns:1.2fr 100px 1fr 1fr">
+            <label><span>Code</span><input id="cf-code" name="code" required pattern="[A-Za-z0-9_\\-]{3,20}" placeholder="FAMILLE50" style="text-transform:uppercase"></label>
+            <label><span>Remise %</span><input id="cf-pct" name="percent" type="number" min="1" max="${pr.maxCode}" value="30" required></label>
+            <label><span>Pour <span class="hint">note interne</span></span><input id="cf-note" name="note" placeholder="Famille, amis…"></label>
+            <label><span>Expire le <span class="hint">optionnel</span></span><input id="cf-exp" name="expires" type="date"></label>
+          </div>
+          <button class="btn btn-sm" style="justify-self:start">Créer le code</button>
+        </form></div>
+
+      <div class="box"><h3>Soldes</h3><p>Soldes générales d'hiver et d'été sur les fins de stock. Réduction maximale : ${pr.maxSale} %. Coche les articles concernés.</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px"><button class="btn btn-ghost btn-sm" data-preset="hiver">+ Soldes d'hiver</button><button class="btn btn-ghost btn-sm" data-preset="ete">+ Soldes d'été</button></div>
+        <div id="salesList"></div></div>
+
+      <div class="box"><h3>Remise par quantité</h3><p>Pousse à ajouter une pièce de plus. Ne se cumule pas avec un code promo.</p>
+        <label class="check" style="margin-bottom:12px"><input type="checkbox" id="volOn" ${pr.volume.enabled ? "checked" : ""}> Activer</label>
+        <div id="tiers" style="display:grid;gap:8px;max-width:420px">${pr.volume.tiers.map((x, i) => `<div style="display:flex;gap:8px;align-items:center"><span class="label">Dès</span><input class="input" type="number" min="2" value="${x.qty}" data-tier="${i}" data-tk="qty" style="width:70px" aria-label="Pièces"><span class="label">pièces</span><input class="input" type="number" min="1" max="50" value="${x.percent}" data-tier="${i}" data-tk="percent" style="width:70px" aria-label="Remise"><span class="label">%</span></div>`).join("")}</div></div>
+
+      <div class="box"><h3>Emballage cadeau</h3>
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><label class="check"><input type="checkbox" id="giftOn" ${pr.giftWrap.enabled ? "checked" : ""}> Proposer l'emballage cadeau</label>
+        <label class="form" style="display:flex;align-items:center;gap:8px"><span class="label">Prix</span><input class="input" type="number" step="0.5" min="0" id="giftPrice" value="${+pr.giftWrap.price}" style="width:90px"></label></div></div>
+
+      <button class="btn" id="promoSave">Enregistrer les promotions</button>`;
+    const renderSales = () => {
+      $("#salesList").innerHTML = pr.sales.map((x, i) => {
+        const live = x.active && x.start <= t && x.end >= t;
+        return `<div class="box sale-box" data-si="${i}" style="background:var(--bg)">
+          <div class="row3" style="grid-template-columns:1.4fr 1fr 1fr 90px auto;display:grid;gap:10px;align-items:end">
+            <label class="form"><span class="label">Nom</span><input class="input" data-sk="name" value="${esc(x.name)}"></label>
+            <label class="form"><span class="label">Début</span><input class="input" type="date" data-sk="start" value="${esc(x.start)}"></label>
+            <label class="form"><span class="label">Fin</span><input class="input" type="date" data-sk="end" value="${esc(x.end)}"></label>
+            <label class="form"><span class="label">Remise %</span><input class="input" type="number" min="1" max="${pr.maxSale}" data-sk="percent" value="${x.percent}"></label>
+            <div style="display:flex;gap:6px;align-items:center"><label class="check"><input type="checkbox" data-sk="active" ${x.active ? "checked" : ""}> Active</label><button class="icon-btn" data-sdel="${i}" aria-label="Supprimer">✕</button></div>
+          </div>
+          <p class="label" style="margin:10px 0">${live ? `<span style="color:var(--ok)">En cours</span>` : x.start > t ? "À venir" : "Terminée ou inactive"} · ${x.productIds.length} article(s)
+            · <button class="rm" data-sauto="${i}">Cocher les fins de stock (≤ 10)</button> · <button class="rm" data-sall="${i}">Tout cocher</button> · <button class="rm" data-snone="${i}">Tout décocher</button></p>
+          <div class="checks">${DATA.products.map((p) => `<label><input type="checkbox" data-sp="${esc(p.id)}" ${x.productIds.includes(p.id) ? "checked" : ""}> ${esc(p.name)} <span class="muted">· ${+p.stock || 0}</span></label>`).join("")}</div>
+        </div>`;
+      }).join("") || `<p class="muted">Aucune période de soldes.</p>`;
+      if (role().readOnly) lockReadOnly($("#salesList"));
+    };
+    renderSales();
+    $$("[data-preset]", el).forEach((b) => b.addEventListener("click", () => { pr.sales.push(salePreset(b.dataset.preset)); renderSales(); }));
+    $("#salesList").addEventListener("input", (e) => {
+      const box = e.target.closest("[data-si]"); if (!box) return;
+      const x = pr.sales[+box.dataset.si];
+      const k = e.target.dataset.sk;
+      if (k === "active") x.active = e.target.checked;
+      else if (k === "percent") x.percent = Math.max(1, Math.min(+e.target.value || 0, pr.maxSale));
+      else if (k) x[k] = e.target.value;
+      if (e.target.dataset.sp) { const id = e.target.dataset.sp; x.productIds = e.target.checked ? [...new Set([...x.productIds, id])] : x.productIds.filter((y) => y !== id); }
+    });
+    $("#salesList").addEventListener("click", (e) => {
+      const d = e.target.closest("[data-sdel]"), au = e.target.closest("[data-sauto]"), al = e.target.closest("[data-sall]"), no = e.target.closest("[data-snone]");
+      if (d && confirm("Supprimer cette période de soldes ?")) { pr.sales.splice(+d.dataset.sdel, 1); renderSales(); }
+      if (au) { pr.sales[+au.dataset.sauto].productIds = DATA.products.filter((p) => (+p.stock || 0) > 0 && (+p.stock || 0) <= 10).map((p) => p.id); renderSales(); }
+      if (al) { pr.sales[+al.dataset.sall].productIds = DATA.products.map((p) => p.id); renderSales(); }
+      if (no) { pr.sales[+no.dataset.snone].productIds = []; renderSales(); }
+    });
+    $("#tiers").addEventListener("input", (e) => { const i = e.target.dataset.tier; if (i !== undefined) pr.volume.tiers[+i][e.target.dataset.tk] = Math.max(1, Math.min(+e.target.value || 0, e.target.dataset.tk === "percent" ? 50 : 99)); });
+    $("#codeForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const f = Object.fromEntries(new FormData(e.target));
+      const code = normCode(f.code);
+      if (pr.codes.some((c) => c.hash === codeHash(code))) { toast("Ce code existe déjà."); return; }
+      const pct = Math.max(1, Math.min(+f.percent || 0, pr.maxCode));
+      pr.codes.push({ id: uid("code"), hash: codeHash(code), hint: code.slice(0, 3) + "•".repeat(Math.max(2, code.length - 3)), percent: pct, note: f.note.trim(), expires: f.expires || "", active: true });
+      DATA.promos = pr; saveDraft(); pageTeam();
+      toast(`Code ${code} créé (−${pct} %). Note-le : il ne sera plus affiché en clair.`);
+    });
+    el.addEventListener("change", (e) => {
+      const on = e.target.closest("[data-code-on]"); if (on) pr.codes[+on.dataset.codeOn].active = on.checked;
+    });
+    el.addEventListener("click", (e) => {
+      const del = e.target.closest("[data-code-del]");
+      if (del && confirm("Supprimer ce code ?")) { pr.codes.splice(+del.dataset.codeDel, 1); DATA.promos = pr; saveDraft(); pageTeam(); }
+    });
+    $("#promoSave").addEventListener("click", () => {
+      pr.volume.enabled = $("#volOn").checked;
+      pr.giftWrap.enabled = $("#giftOn").checked; pr.giftWrap.price = Math.max(0, +$("#giftPrice").value || 0);
+      for (const x of pr.sales) if (x.start && x.end && x.end < x.start) { toast(`« ${x.name} » : la fin est avant le début.`); return; }
+      DATA.promos = pr; saveDraft(); toast("Promotions enregistrées."); pageTeam();
+    });
+  }
+
+  /* --- Personnalisation : dessins proposés --- */
+  function tabDesigns(el) {
+    const list = clone(DATA.designs);
+    const demo = DATA.products.find((p) => p.type === "tshirt") || DATA.products[0];
+    el.innerHTML = `${publishNotice()}
+      <div class="notice info">Les dessins que les clients peuvent ajouter sur les pièces personnalisables, avec leur supplément. Le logo SKX reste toujours brodé en bas à gauche, en plus du dessin choisi.</div>
+      <div id="dList" class="design-admin"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button class="btn btn-ghost btn-sm" id="dAdd">Ajouter un dessin (image)</button><button class="btn btn-sm" id="dSave">Enregistrer</button></div>`;
+    const render = () => {
+      $("#dList").innerHTML = list.map((d, i) => `<div class="box d-row" data-i="${i}">
+        <div class="d-prev">${demo ? productSVG(demo, { design: d.id === "none" ? "none" : d.id, color: "#18191b" }) : ""}</div>
+        <div class="form" style="flex:1">
+          <div class="row3" style="grid-template-columns:1fr 110px auto">
+            <label><span>Nom</span><input data-k="name" value="${esc(d.name)}" ${d.id === "none" ? "readonly" : ""}></label>
+            <label><span>Supplément €</span><input type="number" step="0.5" min="0" data-k="price" value="${+d.price || 0}" ${d.id === "none" ? "readonly" : ""}></label>
+            <label class="check" style="align-self:end"><input type="checkbox" data-k="enabled" ${d.enabled ? "checked" : ""} ${d.id === "none" ? "disabled" : ""}> Proposé</label>
+          </div>
+          ${BUILTIN_DESIGNS[d.id] || d.id === "none" ? "" : `<label><span>Image du dessin <span class="hint">PNG transparent conseillé — lien ou assets/…</span></span><input data-k="image" value="${esc(d.image && d.image.startsWith("data:") ? "" : d.image)}"></label>
+            <div style="display:flex;gap:8px"><label class="btn btn-ghost btn-sm" style="cursor:pointer">Importer l'image<input type="file" accept="image/*" data-file="${i}" hidden></label><button class="btn btn-danger btn-sm" data-del="${i}">Supprimer</button></div>`}
+        </div></div>`).join("");
+      if (role().readOnly) lockReadOnly($("#dList"));
+    };
+    // l'aperçu lit DATA.designs : on synchronise temporairement
+    const preview = () => { const keep = DATA.designs; DATA.designs = list; render(); DATA.designs = keep; };
+    preview();
+    $("#dList").addEventListener("change", async (e) => {
+      const row = e.target.closest("[data-i]"); if (!row) return;
+      const d = list[+row.dataset.i], k = e.target.dataset.k;
+      if (k === "enabled") d.enabled = e.target.checked;
+      else if (k === "price") d.price = Math.max(0, +e.target.value || 0);
+      else if (k) { d[k] = e.target.value; if (k === "image") preview(); }
+      if (e.target.dataset.file && e.target.files[0]) { try { d.image = await resizeImage(e.target.files[0], 500); preview(); toast("Image importée."); } catch { toast("Impossible de lire cette image."); } }
+    });
+    $("#dList").addEventListener("click", (e) => { const b = e.target.closest("[data-del]"); if (b && confirm("Supprimer ce dessin ?")) { list.splice(+b.dataset.del, 1); preview(); } });
+    $("#dAdd").addEventListener("click", () => { list.push({ id: uid("d"), name: "Nouveau dessin", price: 5, enabled: false, image: "" }); preview(); });
+    $("#dSave").addEventListener("click", () => { DATA.designs = list; saveDraft(); toast("Dessins enregistrés."); pageTeam(); });
   }
 
   /* --- Radio --- */
@@ -1449,7 +1851,7 @@
     });
   }
 
-  const TABS = { dashboard: tabDashboard, products: tabProducts, specs: tabSpecs, materials: tabMaterials, charter: tabCharter, zones: tabZones, history: tabHistory, people: tabPeople, radio: tabRadio, orders: tabOrders, team: tabTeam, settings: tabSettings, account: tabAccount };
+  const TABS = { dashboard: tabDashboard, products: tabProducts, specs: tabSpecs, materials: tabMaterials, charter: tabCharter, zones: tabZones, history: tabHistory, people: tabPeople, promos: tabPromos, designs: tabDesigns, radio: tabRadio, orders: tabOrders, team: tabTeam, settings: tabSettings, account: tabAccount };
 
   /* ================= RADIO ================= */
   const radio = (() => {
@@ -1585,7 +1987,8 @@
     else if (page === "histoire") pageHistoire();
     else if (page === "lequipe") pagePeople();
     else if (page === "matieres") pageMatieres();
-    else if (page === "infos") pageInfos();
+    else if (page === "infos" || page === "guide") pageGuide();
+    else if (page === "soldes") pageSoldes();
     else if (page === "equipe" || page === "admin") pageTeam();
     else pageNotFound();
     window.scrollTo(0, 0);

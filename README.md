@@ -1,11 +1,15 @@
 # SKX — boutique de vêtements
 
-Site statique (HTML/CSS/JS, rien à installer). SKX, pensé en 2014.
+Site statique (HTML/CSS/JS, rien à installer). SKX, pensé en 2014 — « Ta fierté, ton progrès. »
 
 - **Homme, Femme, Enfants**, tailles XS à 3XL (filtres genre, zone, taille)
 - **5 zones** façon ascension en montagne, chacune avec son paysage animé : Streetwear (camp de base), Sport (col), 1ère classe (sommet), Accessoires (refuge), Cool (lac d'altitude)
 - **Histoire** : la marque racontée en slides (flèches, clavier, glisser sur mobile)
-- **L'équipe** : du fondateur aux collaborateurs
+- **L'équipe** : Karim, Anthony, Fabio, avec avatars illustrés réglables
+- **Personnalisation** : coloris et dessin au choix, aperçu en direct, supplément par dessin
+- **Promotions** : codes promo pour les proches (70 % max, enregistrés chiffrés), soldes d'hiver et d'été (50 % max), remise par quantité, emballage cadeau
+- **Ventes** : recommandations « Complète la tenue », barre de livraison offerte, « Vus récemment », page Soldes
+- **Marquage** : logo SKX brodé en bas à gauche + étiquette dans le col
 - **Matières** : textiles certifiés et règles du cahier des charges
 - **Radio en fond** : NRJ France et Fun Radio
 - **Espace équipe** (`#/equipe`) : comptes collaborateurs et rôles, produits, zones, histoire, page équipe, matières, fiches techniques
