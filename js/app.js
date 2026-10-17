@@ -268,8 +268,7 @@
     const so = s.social || {};
     $("#socialLinks").innerHTML = [["instagram", "Instagram"], ["tiktok", "TikTok"], ["youtube", "YouTube"]].filter(([k]) => so[k]).map(([k, n]) => `<a href="${esc(so[k])}" target="_blank" rel="noopener">${n}</a>`).join("");
     $$(".contact-mail").forEach((a) => { a.href = s.contactEmail ? `mailto:${s.contactEmail}` : "#"; a.textContent = s.contactEmail || ""; });
-    const u = currentUser();
-    $("#teamName").textContent = u ? u.name.split(" ")[0] : "";
+
   }
   function openModal(html, width) {
     const box = $("#modalBox");
@@ -297,7 +296,7 @@
   const isWished = (id) => wish.includes(id);
   function toggleWish(id) {
     wish = isWished(id) ? wish.filter((x) => x !== id) : [id, ...wish];
-    store.set("skx_wish", wish); renderWishCount();
+    store.set("skx_wish", wish); renderWishCount(); Accounts.push();
     $$(`[data-wish="${id}"]`).forEach((b) => b.classList.toggle("on", isWished(id)));
     toast(isWished(id) ? "Ajouté à ta liste d'envies." : "Retiré de ta liste d'envies.");
   }
@@ -564,7 +563,7 @@
   let promo = store.get("skx_promo", null);
   let gift = false;
   const lineKey = (l) => [l.id, l.size, l.color || "", l.design || "none", l.number || "", l.name || ""].join("|");
-  const saveCart = () => { cart = cart.filter((l) => productById(l.id)); store.set("skx_cart", cart); store.set("skx_cart_at", Date.now()); renderCart(); };
+  const saveCart = () => { cart = cart.filter((l) => productById(l.id)); store.set("skx_cart", cart); store.set("skx_cart_at", Date.now()); renderCart(); Accounts.push(); };
   function addToCart(item) {
     const p = productById(item.id);
     const inCart = cart.filter((l) => l.id === item.id).reduce((a, l) => a + l.qty, 0);
@@ -704,14 +703,16 @@
     if (!cart.length) return;
     const t = totals();
     const up = upsell();
+    const pf = Accounts.profile() || {}, au = Accounts.user();
     openModal(`<div class="modal-pad">
       <h2>Finaliser la commande</h2>
+      ${au ? `<p class="label" style="margin:0 0 8px">Connecté : ${esc(au.email)} · la commande sera ajoutée à ton historique</p>` : `<p class="label" style="margin:0 0 8px"><a class="link" href="#/compte" data-close>Connecte-toi</a> pour pré-remplir tes infos et suivre ta commande.</p>`}
       <p class="muted" style="margin:0 0 20px">Total : <span class="price" style="color:var(--text)">${money(t.total)}</span>${t.discount ? ` · dont ${money(t.discount)} de remise` : ""}</p>
       <form class="form" id="orderForm">
-        <div class="row"><label><span>Prénom</span><input id="o-prenom" name="prenom" required autocomplete="given-name"></label><label><span>Nom</span><input id="o-nom" name="nom" required autocomplete="family-name"></label></div>
-        <div class="row"><label><span>Email</span><input id="o-email" type="email" name="email" required autocomplete="email"></label><label><span>Téléphone</span><input id="o-tel" name="tel" autocomplete="tel"></label></div>
-        <label><span>Adresse</span><input id="o-adresse" name="adresse" required autocomplete="street-address"></label>
-        <div class="row"><label><span>Code postal</span><input id="o-cp" name="cp" required autocomplete="postal-code"></label><label><span>Ville</span><input id="o-ville" name="ville" required autocomplete="address-level2"></label></div>
+        <div class="row"><label><span>Prénom</span><input id="o-prenom" value="${esc(pf.firstName || "")}" name="prenom" required autocomplete="given-name"></label><label><span>Nom</span><input id="o-nom" value="${esc(pf.lastName || "")}" name="nom" required autocomplete="family-name"></label></div>
+        <div class="row"><label><span>Email</span><input id="o-email" value="${esc(au?.email || "")}" type="email" name="email" required autocomplete="email"></label><label><span>Téléphone</span><input id="o-tel" value="${esc(pf.phone || "")}" name="tel" autocomplete="tel"></label></div>
+        <label><span>Adresse</span><input id="o-adresse" value="${esc(pf.address || "")}" name="adresse" required autocomplete="street-address"></label>
+        <div class="row"><label><span>Code postal</span><input id="o-cp" value="${esc(pf.zip || "")}" name="cp" required autocomplete="postal-code"></label><label><span>Ville</span><input id="o-ville" value="${esc(pf.city || "")}" name="ville" required autocomplete="address-level2"></label></div>
         <label><span>Message</span><textarea id="o-message" name="message" placeholder="Optionnel${gift ? " — mot pour le cadeau" : ""}">${up ? `Complément de la commande ${esc(up.ref)}, à expédier avec elle.` : ""}</textarea></label>
         <label class="check"><input type="checkbox" id="o-cgv" required> J'accepte les <a class="link" href="#/cgv" target="_blank">conditions générales de vente</a></label>
         <button class="btn btn-block">Valider la commande</button>
@@ -732,6 +733,7 @@
         ...tt
       };
       const sent = await sendToTeam({ ...order, email: customer.email }, `Nouvelle commande ${order.ref}`);
+      try { await Accounts.addOrder(order); } catch {}
       const orders = store.get("skx_orders", []); orders.unshift(order); store.set("skx_orders", orders);
       cart = []; promo = null; gift = false; store.del("skx_promo"); session.del("skx_upsell"); saveCart();
       orderDone(order, sent);
@@ -1253,6 +1255,235 @@
 
   function pageNotFound() {
     app.innerHTML = `<section class="section"><div class="container empty"><h2 style="font-family:var(--gothic);font-weight:400;font-size:72px;margin:0">404</h2><p>Cette page s'est perdue dans le brouillard.</p><a class="btn" href="#/">Retour à l'accueil</a></div></section>`;
+  }
+
+  /* ================= ESPACE CLIENT ================= */
+  // Deux modes : Supabase (vrais comptes, synchronisés sur tous les appareils) quand l'URL et la clé
+  // sont réglées dans l'espace équipe ; sinon comptes enregistrés sur cet appareil uniquement.
+  const Accounts = (() => {
+    let sb = null, user = null, profile = null, ready = null;
+    const cloud = () => !!(S().supabaseUrl && S().supabaseKey);
+    const loadSDK = () => new Promise((res, rej) => {
+      if (window.supabase) return res();
+      const sc = document.createElement("script");
+      sc.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js";
+      sc.onload = res; sc.onerror = () => rej(new Error("Service de comptes injoignable."));
+      document.head.appendChild(sc);
+    });
+    const blank = () => ({ firstName: "", lastName: "", phone: "", address: "", zip: "", city: "", cart: [], wishlist: [] });
+    // --- mode appareil ---
+    const localDB = () => store.get("skx_customers", {});
+    const saveLocal = (db) => store.set("skx_customers", db);
+    function init() {
+      if (ready) return ready;
+      ready = (async () => {
+        if (cloud()) {
+          try {
+            await loadSDK();
+            sb = window.supabase.createClient(S().supabaseUrl, S().supabaseKey);
+            const { data } = await sb.auth.getSession();
+            if (data.session) { user = { id: data.session.user.id, email: data.session.user.email }; await loadProfile(); }
+            sb.auth.onAuthStateChange((_e, sess) => { if (!sess) { user = null; profile = null; refreshHeader(); } });
+          } catch (e) { console.warn(e); sb = null; }
+        } else {
+          const em = store.get("skx_customer", null), db = localDB();
+          if (em && db[em]) { user = { id: em, email: em }; profile = Object.assign(blank(), db[em].profile); }
+        }
+        refreshHeader();
+      })();
+      return ready;
+    }
+    async function loadProfile() {
+      if (sb) {
+        const { data } = await sb.from("profiles").select("*").eq("id", user.id).maybeSingle();
+        profile = Object.assign(blank(), data ? { firstName: data.first_name || "", lastName: data.last_name || "", phone: data.phone || "", address: data.address || "", zip: data.zip || "", city: data.city || "", cart: data.cart || [], wishlist: data.wishlist || [] } : {});
+        if (!data) await saveProfile(profile);
+      }
+      mergeOnLogin();
+    }
+    function mergeOnLogin() {
+      // panier et envies : on fusionne ce qui était sur l'appareil avec le compte
+      const key = (l) => lineKey(l);
+      const merged = [...(profile.cart || [])];
+      for (const l of cart) if (!merged.some((m) => key(m) === key(l))) merged.push(l);
+      cart = merged.filter((l) => productById(l.id)); store.set("skx_cart", cart);
+      wish = [...new Set([...(profile.wishlist || []), ...wish])]; store.set("skx_wish", wish);
+      renderCart(); renderWishCount(); push();
+    }
+    async function saveProfile(p) {
+      profile = Object.assign(profile || blank(), p);
+      if (sb && user) {
+        const { error } = await sb.from("profiles").upsert({ id: user.id, first_name: profile.firstName, last_name: profile.lastName, phone: profile.phone, address: profile.address, zip: profile.zip, city: profile.city, cart: profile.cart, wishlist: profile.wishlist, updated_at: new Date().toISOString() });
+        if (error) throw new Error("Enregistrement impossible : " + error.message);
+      } else if (user) { const db = localDB(); db[user.email].profile = profile; saveLocal(db); }
+      refreshHeader();
+    }
+    let pushT;
+    function push() { if (!user) return; clearTimeout(pushT); pushT = setTimeout(() => saveProfile({ cart, wishlist: wish }).catch(() => {}), 600); }
+    async function signup(email, pwd, first) {
+      email = email.trim().toLowerCase();
+      if (sb) {
+        const { data, error } = await sb.auth.signUp({ email, password: pwd, options: { data: { first_name: first } } });
+        if (error) throw new Error(trad(error.message));
+        if (!data.session) return "confirm";
+        user = { id: data.user.id, email }; profile = blank(); profile.firstName = first; await saveProfile(profile); mergeOnLogin(); return "ok";
+      }
+      const db = localDB();
+      if (db[email]) throw new Error("Un compte existe déjà avec cet e-mail.");
+      const salt = uid("s");
+      db[email] = { salt, hash: await derive(pwd, salt), profile: Object.assign(blank(), { firstName: first }), created: new Date().toISOString() };
+      saveLocal(db); store.set("skx_customer", email);
+      user = { id: email, email }; profile = db[email].profile; mergeOnLogin(); refreshHeader(); return "ok";
+    }
+    async function login(email, pwd) {
+      email = email.trim().toLowerCase();
+      if (sb) {
+        const { data, error } = await sb.auth.signInWithPassword({ email, password: pwd });
+        if (error) throw new Error(trad(error.message));
+        user = { id: data.user.id, email }; await loadProfile(); refreshHeader(); return;
+      }
+      const db = localDB(), c = db[email];
+      if (!c || !(await verify(pwd, c.salt, c.hash))) throw new Error("E-mail ou mot de passe incorrect.");
+      store.set("skx_customer", email); user = { id: email, email }; profile = Object.assign(blank(), c.profile); mergeOnLogin(); refreshHeader();
+    }
+    async function logout() {
+      if (sb) await sb.auth.signOut();
+      store.del("skx_customer"); user = null; profile = null;
+      cart = []; wish = []; store.set("skx_cart", cart); store.set("skx_wish", wish); renderCart(); renderWishCount(); refreshHeader();
+    }
+    async function reset(email) {
+      if (!sb) throw new Error("La réinitialisation par e-mail sera disponible quand les comptes en ligne seront activés. Contacte-nous en attendant.");
+      const { error } = await sb.auth.resetPasswordForEmail(email.trim(), { redirectTo: location.origin + location.pathname + "#/compte" });
+      if (error) throw new Error(trad(error.message));
+    }
+    async function changePassword(pwd) {
+      if (sb) { const { error } = await sb.auth.updateUser({ password: pwd }); if (error) throw new Error(trad(error.message)); return; }
+      const db = localDB(); db[user.email].salt = uid("s"); db[user.email].hash = await derive(pwd, db[user.email].salt); saveLocal(db);
+    }
+    async function addOrder(o) {
+      if (!user) return;
+      if (sb) { await sb.from("orders").insert({ user_id: user.id, ref: o.ref, data: o, total: o.total }); return; }
+      const db = localDB(); (db[user.email].orders = db[user.email].orders || []).unshift(o); saveLocal(db);
+    }
+    async function orders() {
+      if (!user) return [];
+      if (sb) { const { data } = await sb.from("orders").select("ref,data,total,status,created_at").eq("user_id", user.id).order("created_at", { ascending: false }); return (data || []).map((r) => ({ ...r.data, status: r.status })); }
+      return localDB()[user.email]?.orders || [];
+    }
+    const trad = (m) => /Invalid login/i.test(m) ? "E-mail ou mot de passe incorrect." : /already registered/i.test(m) ? "Un compte existe déjà avec cet e-mail." : /Password should/i.test(m) ? "Mot de passe trop court (8 caractères minimum)." : /Email not confirmed/i.test(m) ? "Confirme d'abord ton e-mail (lien reçu par e-mail)." : m;
+    function refreshHeader() {
+      const n = profile?.firstName || (user ? user.email.split("@")[0] : "");
+      $("#accountName").textContent = user ? n : "";
+      $("#accountBtn").title = user ? "Mon compte" : "Se connecter";
+    }
+    return { init, cloud: () => !!sb, user: () => user, profile: () => profile, signup, login, logout, reset, saveProfile, push, addOrder, orders, changePassword };
+  })();
+
+  let accountTab = "panier";
+  async function pageAccount() {
+    app.innerHTML = `<section class="section"><div class="container"><p class="muted">Chargement…</p></div></section>`;
+    await Accounts.init();
+    const u = Accounts.user();
+    const modeNote = Accounts.cloud() ? "" : `<p class="label" style="margin:12px 0 0">Compte enregistré sur cet appareil</p>`;
+    if (!u) {
+      app.innerHTML = `<section class="section"><div class="container account-auth">
+        <div class="auth-intro"><span class="label">Espace client</span><h2 class="teaser-title">Ton compte SKX</h2>
+          <ul class="benefits"><li>Retrouve ton panier sur tous tes appareils</li><li>Suis tes commandes et ton historique</li><li>Garde ta liste d'envies</li><li>Adresse pré-remplie pour commander plus vite</li><li>Tes codes et offres privées</li></ul></div>
+        <div class="box auth-box">
+          <div class="tabs" style="margin-bottom:18px"><button class="tab active" data-auth="login">Se connecter</button><button class="tab" data-auth="signup">Créer un compte</button></div>
+          <form class="form" id="authForm">
+            <label class="only-signup" hidden><span>Prénom</span><input id="au-first" name="first" autocomplete="given-name"></label>
+            <label><span>E-mail</span><input id="au-email" name="email" type="email" required autocomplete="email"></label>
+            <label><span>Mot de passe</span><input id="au-pwd" name="pwd" type="password" required minlength="8" autocomplete="current-password"></label>
+            <button class="btn btn-block" id="authBtn">Se connecter</button>
+            <button type="button" class="rm only-login" id="forgot" style="justify-self:start">Mot de passe oublié ?</button>
+          </form>${modeNote}
+        </div></div></section>`;
+      let mode = "login";
+      const setMode = (m) => {
+        mode = m;
+        $$("[data-auth]", app).forEach((b) => b.classList.toggle("active", b.dataset.auth === m));
+        $$(".only-signup", app).forEach((x) => { x.hidden = m !== "signup"; });
+        $$(".only-login", app).forEach((x) => { x.hidden = m !== "login"; });
+        $("#au-first").required = m === "signup";
+        $("#au-pwd").autocomplete = m === "signup" ? "new-password" : "current-password";
+        $("#authBtn").textContent = m === "signup" ? "Créer mon compte" : "Se connecter";
+      };
+      $$("[data-auth]", app).forEach((b) => b.addEventListener("click", () => setMode(b.dataset.auth)));
+      $("#forgot").addEventListener("click", async () => {
+        const em = $("#au-email").value; if (!em) { toast("Écris d'abord ton e-mail."); return; }
+        try { await Accounts.reset(em); toast("Un lien pour changer ton mot de passe t'a été envoyé."); } catch (e) { toast(e.message); }
+      });
+      $("#authForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const btn = $("#authBtn"); btn.disabled = true;
+        const f = Object.fromEntries(new FormData(e.target));
+        try {
+          if (mode === "signup") {
+            const r = await Accounts.signup(f.email, f.pwd, (f.first || "").trim());
+            if (r === "confirm") { toast("Compte créé : confirme ton e-mail avec le lien reçu, puis connecte-toi."); setMode("login"); btn.disabled = false; return; }
+            toast("Bienvenue chez SKX !");
+          } else { await Accounts.login(f.email, f.pwd); toast("Content de te revoir."); }
+          pageAccount();
+        } catch (err) { toast(err.message); btn.disabled = false; }
+      });
+      return;
+    }
+    const p = Accounts.profile() || {};
+    const tabs = { panier: "Mon panier", commandes: "Mes commandes", envies: "Mes envies", infos: "Mes infos", codes: "Mes codes" };
+    app.innerHTML = `<section class="section"><div class="container">
+      <div class="admin-head"><div style="display:grid;gap:8px"><span class="label">Espace client</span><h1>Salut ${esc(p.firstName || "")}</h1><span class="muted">${esc(u.email)}</span>${modeNote}</div>
+        <button class="btn btn-ghost btn-sm" id="accLogout">Déconnexion</button></div>
+      <div class="tabs">${Object.entries(tabs).map(([k, v]) => `<button class="tab ${k === accountTab ? "active" : ""}" data-at="${k}">${v}</button>`).join("")}</div>
+      <div id="accBody"></div></div></section>`;
+    $(".tabs", app).addEventListener("click", (e) => { const t = e.target.closest("[data-at]"); if (t) { accountTab = t.dataset.at; pageAccount(); } });
+    $("#accLogout").addEventListener("click", async () => { await Accounts.logout(); toast("Tu es déconnecté."); location.hash = "#/"; });
+    const body = $("#accBody");
+    if (accountTab === "panier") {
+      const t = totals();
+      body.innerHTML = cart.length ? `<div class="split"><div>${cart.map((l) => { const pr = productById(l.id); return `<div class="line"><div class="line-img">${productVisual(pr, { color: l.colorHex, design: l.design, custom: true })}</div><div style="display:grid;gap:4px"><b style="font-weight:500">${esc(pr.name)}</b><span class="label">Taille ${esc(l.size)}${l.color ? " · " + esc(l.color) : ""} · ×${l.qty}</span></div><span class="price">${money(lineUnit(l) * l.qty)}</span></div>`; }).join("")}</div>
+        <div class="box"><div class="totals"><div><span>Sous-total</span><span class="price">${money(t.sub)}</span></div>${t.discount ? `<div class="disc"><span>${esc(t.discountLabel)}</span><span class="price">−${money(t.discount)}</span></div>` : ""}<div><span>Livraison</span><span class="price">${t.ship ? money(t.ship) : "Offerte"}</span></div><div class="total"><span>Total</span><span class="price">${money(t.total)}</span></div></div>
+        <div style="display:grid;gap:8px;margin-top:14px"><button class="btn" id="accCheckout">Commander</button><button class="btn btn-ghost" id="accEdit">Modifier le panier</button></div></div></div>`
+        : `<div class="empty">Ton panier est vide.<br><br><a class="btn btn-sm" href="#/boutique">Voir la boutique</a></div>`;
+      $("#accCheckout")?.addEventListener("click", checkout);
+      $("#accEdit")?.addEventListener("click", openCart);
+    }
+    if (accountTab === "commandes") {
+      body.innerHTML = `<p class="muted">Chargement…</p>`;
+      const list = await Accounts.orders();
+      body.innerHTML = list.length ? `<div class="table-wrap"><table class="table"><thead><tr><th>Commande</th><th>Date</th><th>Articles</th><th>Statut</th><th class="num">Total</th><th></th></tr></thead><tbody>${list.map((o, i) => `<tr><td class="mono">${esc(o.ref)}</td><td>${new Date(o.date).toLocaleDateString("fr-FR")}</td><td>${o.items.map((it) => `${esc(it.name)} (${esc(it.size)}) ×${it.qty}`).join("<br>")}</td><td><span class="status status-Validé">${esc(o.status || "Reçue")}</span></td><td class="num">${money(o.total)}</td><td><button class="btn btn-ghost btn-sm" data-again="${i}">Racheter</button></td></tr>`).join("")}</tbody></table></div>`
+        : `<div class="empty">Pas encore de commande.<br><br><a class="btn btn-sm" href="#/boutique">Découvrir la boutique</a></div>`;
+      body.addEventListener("click", (e) => {
+        const b = e.target.closest("[data-again]"); if (!b) return;
+        const o = list[+b.dataset.again]; let n = 0;
+        for (const it of o.items) { const pr = productById(it.id); if (pr && (+pr.stock || 0) > 0) { addToCart({ id: it.id, size: it.size, qty: it.qty, color: it.color || "", colorHex: (pr.colors || []).find((c) => c.name === it.color)?.hex || pr.color, design: (DATA.designs || []).find((d) => d.name === it.design)?.id || "none", number: it.number || "", name: it.flocName || "" }); n++; } }
+        toast(n ? "Articles ajoutés au panier." : "Ces articles ne sont plus disponibles."); if (n) openCart();
+      });
+    }
+    if (accountTab === "envies") body.innerHTML = wish.filter((id) => productById(id)).length ? grid(wish.map(productById).filter(Boolean)) : `<div class="empty">Ta liste est vide. Touche le cœur sur une pièce pour l'ajouter.</div>`;
+    if (accountTab === "infos") {
+      body.innerHTML = `<div class="split"><form class="form box" id="infoForm"><h3>Adresse de livraison</h3>
+          <div class="row"><label><span>Prénom</span><input id="ac-first" name="firstName" value="${esc(p.firstName)}" autocomplete="given-name"></label><label><span>Nom</span><input id="ac-last" name="lastName" value="${esc(p.lastName)}" autocomplete="family-name"></label></div>
+          <label><span>Téléphone</span><input id="ac-tel" name="phone" value="${esc(p.phone)}" autocomplete="tel"></label>
+          <label><span>Adresse</span><input id="ac-addr" name="address" value="${esc(p.address)}" autocomplete="street-address"></label>
+          <div class="row"><label><span>Code postal</span><input id="ac-zip" name="zip" value="${esc(p.zip)}" autocomplete="postal-code"></label><label><span>Ville</span><input id="ac-city" name="city" value="${esc(p.city)}" autocomplete="address-level2"></label></div>
+          <button class="btn btn-sm" style="justify-self:start">Enregistrer</button></form>
+        <form class="form box" id="pwdForm2"><h3>Mot de passe</h3>
+          <label><span>Nouveau mot de passe</span><input id="ac-p1" type="password" minlength="8" required autocomplete="new-password"></label>
+          <label><span>Confirmer</span><input id="ac-p2" type="password" minlength="8" required autocomplete="new-password"></label>
+          <button class="btn btn-ghost btn-sm" style="justify-self:start">Changer</button>
+          <p class="label" style="margin:10px 0 0">Pour supprimer ton compte et tes données, écris à ${esc(S().contactEmail)}.</p></form></div>`;
+      $("#infoForm").addEventListener("submit", async (e) => { e.preventDefault(); try { await Accounts.saveProfile(Object.fromEntries(new FormData(e.target))); toast("Infos enregistrées."); } catch (err) { toast(err.message); } });
+      $("#pwdForm2").addEventListener("submit", async (e) => { e.preventDefault(); if ($("#ac-p1").value !== $("#ac-p2").value) { toast("Les deux mots de passe sont différents."); return; } try { await Accounts.changePassword($("#ac-p1").value); toast("Mot de passe changé."); e.target.reset(); } catch (err) { toast(err.message); } });
+    }
+    if (accountTab === "codes") {
+      const w = S().welcome;
+      body.innerHTML = `<div class="reviews">${w && w.enabled ? `<div class="box"><span class="label">Bienvenue</span><h3 class="mono" style="margin:8px 0">${esc(w.code)}</h3><p class="muted" style="margin:0 0 12px">−${w.percent} % sur ta première commande, hors articles soldés.</p><button class="btn btn-sm" data-use="${esc(w.code)}">Appliquer à mon panier</button></div>` : ""}
+        ${activeSales().length ? `<div class="box"><span class="label">En ce moment</span><h3 style="margin:8px 0">${esc(activeSales()[0].name)}</h3><p class="muted" style="margin:0 0 12px">Jusqu'à −${P().maxSale} % sur une sélection.</p><a class="btn btn-ghost btn-sm" href="#/soldes">Voir les soldes</a></div>` : ""}
+        <div class="box"><span class="label">Code privé</span><p class="muted" style="margin:8px 0 12px">Tu as reçu un code de l'équipe SKX ? Ajoute-le à ton panier.</p><form id="codeIn" style="display:flex;gap:8px"><input class="input" id="codeVal" placeholder="CODE" style="flex:1;text-transform:uppercase"><button class="btn btn-sm">Appliquer</button></form></div></div>`;
+      body.addEventListener("click", (e) => { const b = e.target.closest("[data-use]"); if (b) applyCode(b.dataset.use); });
+      $("#codeIn").addEventListener("submit", (e) => { e.preventDefault(); applyCode($("#codeVal").value); });
+    }
   }
 
   /* ================= ESPACE ÉQUIPE ================= */
@@ -2304,6 +2535,7 @@
         <div class="row"><label><span>Livraison offerte dès (€)</span><input id="st-free" type="number" step="0.01" name="freeShippingFrom" value="${+s.freeShippingFrom}"></label><label><span>Prix de la livraison (€)</span><input id="st-ship" type="number" step="0.01" name="shippingPrice" value="${+s.shippingPrice}"></label></div>
         <label><span>Texte d'accueil</span><input id="st-hero" name="heroText" value="${esc(s.heroText || "")}"></label>
         <div class="row3"><label><span>Délai d'expédition</span><input id="st-delay" name="shipDelay" value="${esc(s.shipDelay || "")}"></label><label><span>Jours pour retourner</span><input id="st-ret" type="number" name="returnDays" value="${+s.returnDays || 30}"></label><label><span>Moyens de paiement affichés</span><input id="st-pm" name="paymentMethods" value="${esc(s.paymentMethods || "")}" placeholder="Carte bancaire, PayPal…"></label></div>
+        <div class="row"><label><span>Comptes clients · URL Supabase <span class="hint">vide = comptes sur l'appareil</span></span><input id="st-sbu" name="supabaseUrl" value="${esc(s.supabaseUrl || "")}" placeholder="https://xxxx.supabase.co"></label><label><span>Clé publique (anon) Supabase</span><input id="st-sbk" name="supabaseKey" value="${esc(s.supabaseKey || "")}" placeholder="eyJhbGciOi…"></label></div>
         <div class="row"><label><span>Dépôt GitHub</span><input id="st-repo" name="githubRepo" value="${esc(s.githubRepo)}" placeholder="utilisateur/depot"></label><label><span>Branche publiée</span><input id="st-branch" name="githubBranch" value="${esc(s.githubBranch)}"></label></div>
         <button class="btn btn-sm" style="justify-self:start">Enregistrer</button>
       </form></div>
@@ -2473,6 +2705,7 @@
     else if (page === "femme") pageShop("femme");
     else if (page === "enfants") pageShop("enfant");
     else if (page === "envies") pageWish();
+    else if (page === "compte") pageAccount();
     else if (page === "contact") pageContact();
     else if (page === "mentions" || page === "cgv" || page === "confidentialite") pageLegal(page);
     else if (page === "histoire") pageHistoire();
@@ -2533,6 +2766,7 @@
   applySettings();
   renderCart();
   renderWishCount();
+  Accounts.init();
   route();
   // Code de bienvenue après quelques secondes (une seule fois par visiteur)
   setTimeout(() => welcomePopup(false), (+(S().welcome?.delay) || 12) * 1000);

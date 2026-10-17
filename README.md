@@ -17,6 +17,18 @@ Site statique (HTML/CSS/JS, rien à installer). SKX, pensé en 2014 — « Ta fi
 - **Espace équipe** (`#/equipe`) : comptes collaborateurs et rôles, produits, zones, histoire, page équipe, matières, fiches techniques
 - Contact : contact-team@skx.fr
 
+## Espace client (#/compte)
+
+Les clients créent un compte, se connectent et retrouvent : leur panier, leurs commandes (avec « Racheter »), leur liste d'envies, leur adresse (pré-remplie à la commande) et leurs codes.
+
+- **Sans réglage** : les comptes sont enregistrés sur l'appareil du client (pratique pour tester, mais pas de synchronisation entre téléphone et ordinateur).
+- **Vrais comptes en ligne (recommandé, gratuit)** :
+  1. Crée un projet sur https://supabase.com
+  2. SQL Editor → colle le contenu de `supabase/schema.sql` → Run
+  3. Project Settings → API : copie l'**URL** et la clé **anon public**
+  4. Espace équipe → Réglages → colle-les dans « Comptes clients », puis publie
+  Les comptes, paniers, envies et commandes sont alors synchronisés sur tous les appareils, avec e-mail de confirmation et « mot de passe oublié ». Le statut des commandes se change dans Supabase (table `orders`, colonne `status`).
+
 ## Espace équipe
 
 Première connexion : identifiant `admin`, mot de passe `skx2026`. Le site te demande alors de créer ton compte administrateur ; le compte `admin` est ensuite désactivé.
