@@ -1678,31 +1678,33 @@ window.SKX_DATA = {
       "photo": "",
       "since": "",
       "avatar": {
-        "hair": "court",
+        "hair": "rase",
         "facial": "barbe",
         "acc": "casquette",
-        "top": "#33433a",
+        "top": "#8a8d90",
         "bg": "sport",
-        "skin": "#cbc3b4",
-        "hairColor": "#1b1a19"
+        "skin": "#c48f68",
+        "hairColor": "#1e1915",
+        "cap": "#141414"
       }
     },
     {
       "id": "pp-anthony",
-      "name": "Anthony",
-      "title": "Co-gestionnaire · Designer",
-      "bio": "Co-gestionnaire et designer de la marque. Passionné d'informatique et de belles autos.",
+      "name": "Anthony F",
+      "title": "Fondateur du site web",
+      "bio": "Fondateur du site web et designer de la marque. Passionné d'informatique et de belles autos.",
       "quote": "Ce qui est essentiel, à mon avis, c'est d'imaginer le développement sous tous ses angles.",
       "photo": "",
       "since": "",
       "avatar": {
-        "hair": "meche",
-        "facial": "aucune",
-        "acc": "lunettes",
+        "hair": "court",
+        "facial": "courte",
+        "acc": "aucun",
         "top": "#1c1f22",
         "bg": "premiere",
-        "skin": "#cbc3b4",
-        "hairColor": "#2a211b"
+        "skin": "#e3b9a0",
+        "hairColor": "#6b4a2e",
+        "cap": "#141414"
       }
     },
     {

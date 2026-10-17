@@ -88,7 +88,9 @@
     d.settings.legal = Object.assign({}, (base.settings || {}).legal, d.settings.legal);
     d.settings.social = Object.assign({}, (base.settings || {}).social, d.settings.social);
     d.promos.maxCode = Math.min(+d.promos.maxCode || 70, 70); d.promos.maxSale = Math.min(+d.promos.maxSale || 50, 50);
-    d.people.forEach((m) => { m.avatar = Object.assign({ hair: "court", facial: "aucune", acc: "aucun", top: "#1c1f22", bg: "streetwear", skin: "#cbc3b4", hairColor: "#1b1a19" }, m.avatar || {}); });
+    // Avatars uniquement (plus de photos) ; les anciens réglages d'avatar reprennent ceux publiés
+    d.people.forEach((m) => { m.photo = ""; const b = (base.people || []).find((x) => x.id === m.id); if (b && (!m.avatar || !m.avatar.cap)) m.avatar = clone(b.avatar); });
+    d.people.forEach((m) => { m.avatar = Object.assign({ hair: "court", facial: "aucune", acc: "aucun", top: "#1c1f22", bg: "streetwear", skin: "#cbc3b4", hairColor: "#1b1a19", cap: "#141414" }, m.avatar || {}); });
     d.products.forEach((p) => { ensureSpec(p); if (!ZONE_IDS.includes(p.zone)) p.zone = "streetwear"; if (!GENDERS[p.gender]) p.gender = "mixte"; delete p.univers; if (!Array.isArray(p.colors) || !p.colors.length) p.colors = [{ name: "Unique", hex: p.color || "#c9c4b8" }]; if (p.customizable === undefined) p.customizable = ["tshirt", "hoodie", "veste", "casquette"].includes(p.type); });
     delete d.univers;
     return d;
@@ -855,7 +857,7 @@
       <section class="section"><div class="container split">
         <div style="display:grid;gap:16px;align-content:start"><span class="label">Notre histoire</span><h2 class="teaser-title">${esc(st.title || "")}</h2><p class="muted" style="margin:0;max-width:56ch">${esc(st.history || "")}</p>
           <div><a class="btn btn-ghost btn-sm" href="#/histoire">Découvrir notre histoire</a></div></div>
-        <div class="team-strip">${DATA.people.slice(0, 3).map((m) => `<a href="#/lequipe" class="team-mini"><span class="team-av">${m.photo ? `<img src="${esc(m.photo)}" alt="">` : avatarSVG(m)}</span><b>${esc(m.name)}</b><span class="label">${esc(m.title)}</span></a>`).join("")}
+        <div class="team-strip">${DATA.people.slice(0, 3).map((m) => `<a href="#/lequipe" class="team-mini"><span class="team-av">${avatarSVG(m)}</span><b>${esc(m.name)}</b><span class="label">${esc(m.title)}</span></a>`).join("")}
           <a class="link label" href="#/lequipe" style="grid-column:1/-1">Rencontrer l'équipe →</a></div>
       </div></section>
       ${custom ? `<section class="section" style="padding-top:0"><div class="container split perso-block">
@@ -1090,7 +1092,7 @@
       </div></section>
       <section class="section" style="padding-top:0"><div class="container">
         <div class="section-head"><div><span class="label">L'équipe</span><h2>Qui porte SKX</h2><p>${esc(st.team || "")}</p></div><a class="btn btn-ghost btn-sm" href="#/lequipe">Toute l'équipe</a></div>
-        <div class="team-strip wide">${DATA.people.map((m) => `<a href="#/lequipe" class="team-mini"><span class="team-av">${m.photo ? `<img src="${esc(m.photo)}" alt="">` : avatarSVG(m)}</span><b>${esc(m.name)}</b><span class="label">${esc(m.title)}</span></a>`).join("")}</div>
+        <div class="team-strip wide">${DATA.people.map((m) => `<a href="#/lequipe" class="team-mini"><span class="team-av">${avatarSVG(m)}</span><b>${esc(m.name)}</b><span class="label">${esc(m.title)}</span></a>`).join("")}</div>
       </div></section>
       <section class="section" style="padding-top:0"><div class="container story-grid">
         <div><span class="label">Qualité</span><p class="story-p">${esc(st.quality || "")}</p></div>
@@ -1126,13 +1128,13 @@
   /* L'équipe SKX (page publique) */
   /* Avatars illustrés (style SKX, réglables dans l'espace équipe) */
   const AV_HAIR = { court: "Court", meche: "Mèche", boucle: "Bouclé", long: "Long", rase: "Rasé" };
-  const AV_FACIAL = { aucune: "Aucune", barbe: "Barbe", moustache: "Moustache", bouc: "Bouc" };
+  const AV_FACIAL = { aucune: "Aucune", barbe: "Barbe", courte: "Barbe courte", moustache: "Moustache", bouc: "Bouc" };
   const AV_ACC = { aucun: "Aucun", lunettes: "Lunettes", casquette: "Casquette", bonnet: "Bonnet", casque: "Casque audio" };
   const AV_BG = { streetwear: ["#05070a", "#1e2830", "#5c6874"], sport: ["#0a1219", "#24394a", "#7d98a8"], premiere: ["#0b0704", "#3a2410", "#b9823d"], accessoires: ["#0c0d0e", "#25282b", "#6d7277"], cool: ["#0d0809", "#3a2026", "#a35a45"] };
   function avatarSVG(m) {
     const a = m.avatar || {};
     const [b0, b1, b2] = AV_BG[a.bg] || AV_BG.streetwear;
-    const skin = a.skin || "#cbc3b4", hc = a.hairColor || "#1b1a19", top = a.top || "#1c1f22";
+    const skin = a.skin || "#cbc3b4", hc = a.hairColor || "#1b1a19", top = a.top || "#1c1f22", cap = a.cap || "#141414";
     const g = "a" + Math.random().toString(36).slice(2, 7);
     const shade = "rgba(0,0,0,.18)";
     const hair = {
@@ -1145,11 +1147,12 @@
     const facial = {
       barbe: `<path d="M67 112 Q68 152 100 156 Q132 152 133 112 Q128 132 116 138 Q100 144 84 138 Q72 132 67 112 Z" fill="${hc}"/>`,
       moustache: `<path d="M88 128 Q100 122 112 128 Q100 126 88 128 Z" fill="${hc}" stroke="${hc}" stroke-width="3" stroke-linejoin="round"/>`,
-      bouc: `<path d="M92 136 Q100 152 108 136 Q100 140 92 136 Z" fill="${hc}"/>`
+      bouc: `<path d="M92 136 Q100 152 108 136 Q100 140 92 136 Z" fill="${hc}"/>`,
+      courte: `<path d="M67 112 Q68 152 100 156 Q132 152 133 112 Q128 132 116 138 Q100 144 84 138 Q72 132 67 112 Z" fill="${hc}" opacity=".45"/><path d="M88 129 Q100 124 112 129" fill="none" stroke="${hc}" stroke-width="3" opacity=".6" stroke-linecap="round"/>`
     }[a.facial] || "";
     const acc = {
       lunettes: `<g fill="rgba(255,255,255,.08)" stroke="#111" stroke-width="2.4"><rect x="74" y="104" width="22" height="15" rx="4"/><rect x="104" y="104" width="22" height="15" rx="4"/><path d="M96 110 H104 M74 109 L66 106 M126 109 L134 106" fill="none"/></g>`,
-      casquette: `<path d="M64 98 Q64 60 100 58 Q136 60 136 98 Z" fill="${top}"/><path d="M60 98 L150 98 Q156 106 140 108 L60 104 Z" fill="${top}" stroke="rgba(0,0,0,.35)"/><text x="100" y="88" text-anchor="middle" font-family="Pirata One, serif" font-size="12" fill="#eee">SKX</text>`,
+      casquette: `<path d="M64 98 Q64 60 100 58 Q136 60 136 98 Z" fill="${cap}"/><path d="M56 96 Q100 88 146 96 Q150 106 138 108 Q100 100 62 108 Q52 106 56 96 Z" fill="${cap}" stroke="rgba(255,255,255,.18)"/><rect x="82" y="99" width="36" height="5" rx="2.5" fill="rgba(255,255,255,.15)"/><text x="100" y="88" text-anchor="middle" font-family="Pirata One, serif" font-size="16" fill="#eee">SKX</text>`,
       bonnet: `<path d="M64 102 Q62 54 100 52 Q138 54 136 102 Z" fill="${top}"/><rect x="62" y="92" width="76" height="14" rx="3" fill="${top}" stroke="rgba(0,0,0,.3)"/><text x="100" y="103" text-anchor="middle" font-family="Pirata One, serif" font-size="9" fill="#eee">SKX</text>`,
       casque: `<path d="M62 112 Q60 52 100 50 Q140 52 138 112" fill="none" stroke="#111" stroke-width="6"/><rect x="54" y="102" width="14" height="26" rx="6" fill="#111"/><rect x="132" y="102" width="14" height="26" rx="6" fill="#111"/>`
     }[a.acc] || "";
@@ -1177,7 +1180,7 @@
     app.innerHTML = `<section class="section"><div class="container">
       <div class="section-head"><div><span class="label">Du fondateur aux collaborateurs</span><h2>L'équipe SKX</h2><p>Les personnes qui pensent, dessinent et font vivre SKX.</p></div></div>
       ${P.length ? `<div class="people">${P.map((m, i) => `<article class="person ${i === 0 ? "person-lead" : ""}">
-        <div class="person-photo">${m.photo ? `<img src="${esc(m.photo)}" alt="${esc(m.name)}">` : avatarSVG(m)}</div>
+        <div class="person-photo">${avatarSVG(m)}</div>
         <div class="person-body"><span class="label">${esc(m.title)}${m.since ? " · depuis " + esc(m.since) : ""}</span><h3>${esc(m.name)}</h3><p>${esc(m.bio)}</p>
           ${m.quote ? `<blockquote class="quote">« ${esc(m.quote)} »</blockquote>` : ""}</div>
       </article>`).join("")}</div>` : `<div class="empty">L'équipe sera présentée ici.</div>`}
@@ -1877,20 +1880,19 @@
         <label><span>Présentation</span><textarea data-k="bio">${esc(m.bio)}</textarea></label>
         <label><span>Citation</span><textarea data-k="quote" style="min-height:56px">${esc(m.quote || "")}</textarea></label>
         <div class="av-edit"><div class="av-prev" data-prev="${i}">${avatarSVG(m)}</div>
-          <div class="form" style="flex:1;min-width:240px"><span class="label">Avatar <span class="hint">(utilisé s'il n'y a pas de photo)</span></span>
+          <div class="form" style="flex:1;min-width:240px"><span class="label">Avatar</span>
             <div class="row3">
               <label><span>Cheveux</span><select data-av="hair">${Object.entries(AV_HAIR).map(([k, v]) => `<option value="${k}" ${k === m.avatar.hair ? "selected" : ""}>${v}</option>`).join("")}</select></label>
               <label><span>Visage</span><select data-av="facial">${Object.entries(AV_FACIAL).map(([k, v]) => `<option value="${k}" ${k === m.avatar.facial ? "selected" : ""}>${v}</option>`).join("")}</select></label>
               <label><span>Accessoire</span><select data-av="acc">${Object.entries(AV_ACC).map(([k, v]) => `<option value="${k}" ${k === m.avatar.acc ? "selected" : ""}>${v}</option>`).join("")}</select></label>
             </div>
-            <div class="row3" style="grid-template-columns:repeat(4,1fr)">
+            <div class="row3" style="grid-template-columns:repeat(5,1fr)">
               <label><span>Fond</span><select data-av="bg">${ZONE_IDS.map((z) => `<option value="${z}" ${z === m.avatar.bg ? "selected" : ""}>${esc(DATA.zones[z].name)}</option>`).join("")}</select></label>
               <label><span>Haut</span><input type="color" data-av="top" value="${esc(m.avatar.top)}" style="height:42px;padding:4px"></label>
+              <label><span>Casquette</span><input type="color" data-av="cap" value="${esc(m.avatar.cap || "#141414")}" style="height:42px;padding:4px"></label>
               <label><span>Peau</span><input type="color" data-av="skin" value="${esc(m.avatar.skin)}" style="height:42px;padding:4px"></label>
               <label><span>Cheveux</span><input type="color" data-av="hairColor" value="${esc(m.avatar.hairColor)}" style="height:42px;padding:4px"></label>
             </div></div></div>
-        <div style="display:flex;gap:8px;align-items:end;flex-wrap:wrap"><label style="flex:1;min-width:200px"><span>Photo <span class="hint">lien ou assets/…</span></span><input data-k="photo" value="${esc(m.photo && m.photo.startsWith("data:") ? "" : m.photo || "")}"></label>
-          <label class="btn btn-ghost btn-sm" style="cursor:pointer">Importer une photo<input type="file" accept="image/*" data-file="${i}" hidden></label></div>
       </div>`).join("");
       if (role().readOnly) lockReadOnly($("#pList"));
     };
