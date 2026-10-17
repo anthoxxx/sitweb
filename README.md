@@ -13,7 +13,7 @@ Site statique (HTML/CSS/JS, rien à installer). SKX, pensé en 2014 — « Ta fi
 - **Pages** : Notre histoire (blocs histoire, valeurs, mission, équipe, qualité), Contact, Mentions légales, CGV, Confidentialité (champs à compléter dans Réglages)
 - **Marquage** : logo SKX brodé en bas à gauche + étiquette dans le col
 - **Matières** : textiles certifiés et règles du cahier des charges
-- **Radio en fond** : NRJ France et Fun Radio
+- **Radio en fond** : 21 stations (NRJ, Fun Radio, Skyrock, Mouv', FIP, radios ici des 4 coins de la France, BBC, KEXP, triple j…), groupées par région, boutons station précédente/suivante
 - **Espace équipe** (`#/equipe`) : comptes collaborateurs et rôles, produits, zones, histoire, page équipe, matières, fiches techniques
 - Contact : contact-team@skx.fr
 

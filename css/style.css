@@ -742,7 +742,10 @@ mark { background: rgba(217,164,65,.25); color: var(--text); padding: 0 3px; }
   .radio { flex-wrap: wrap; gap: 8px; padding: 10px 12px; }
   .radio-info, .radio-controls { flex: 1 1 100%; }
   .radio-controls { justify-content: space-between; }
-  #volume { flex: 1; width: auto; }
+  #volume { flex: 1; width: auto; min-width: 0; }
+  .radio-controls { gap: 4px; }
+  .r-btn.small { width: 28px; height: 28px; }
+  #volDown, #volUp { display: none; }
   .vol-val { display: none; }
   body { padding-bottom: 150px; }
   .toast { bottom: 160px; }

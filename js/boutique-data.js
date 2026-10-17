@@ -53,13 +53,159 @@ window.SKX_DATA = {
       "urls": [
         "https://scdn.nrjaudio.fm/adwz2/fr/30001/mp3_128.mp3?origine=fluxradios",
         "https://streaming.nrjaudio.fm/oumvmk8fnozc"
-      ]
+      ],
+      "region": "France"
     },
     {
       "name": "Fun Radio",
       "urls": [
         "https://streamer-02.rtl.fr/fun-1-44-128",
         "https://streamer-01.rtl.fr/fun-1-44-128"
+      ],
+      "region": "France"
+    },
+    {
+      "name": "Skyrock",
+      "region": "France",
+      "urls": [
+        "https://icecast.skyrock.net/s/natio_mp3_128k",
+        "https://icecast.skyrock.net/s/natio_aac_64k"
+      ]
+    },
+    {
+      "name": "Mouv'",
+      "region": "France",
+      "urls": [
+        "https://icecast.radiofrance.fr/mouv-midfi.mp3",
+        "https://icecast.radiofrance.fr/mouv-hifi.aac"
+      ]
+    },
+    {
+      "name": "FIP",
+      "region": "France",
+      "urls": [
+        "https://icecast.radiofrance.fr/fip-midfi.mp3",
+        "https://icecast.radiofrance.fr/fip-hifi.aac"
+      ]
+    },
+    {
+      "name": "ici Nord (Lille)",
+      "region": "France · Nord",
+      "urls": [
+        "https://icecast.radiofrance.fr/fbnord-midfi.mp3",
+        "https://icecast.radiofrance.fr/fbnord-hifi.aac"
+      ]
+    },
+    {
+      "name": "ici Alsace (Strasbourg)",
+      "region": "France · Est",
+      "urls": [
+        "https://icecast.radiofrance.fr/fbalsace-midfi.mp3",
+        "https://icecast.radiofrance.fr/fbalsace-hifi.aac"
+      ]
+    },
+    {
+      "name": "ici Pays de Savoie (Alpes)",
+      "region": "France · Est",
+      "urls": [
+        "https://icecast.radiofrance.fr/fbpaysdesavoie-midfi.mp3",
+        "https://icecast.radiofrance.fr/fbpaysdesavoie-hifi.aac"
+      ]
+    },
+    {
+      "name": "ici Breizh Izel (Bretagne)",
+      "region": "France · Ouest",
+      "urls": [
+        "https://icecast.radiofrance.fr/fbbreizizel-midfi.mp3",
+        "https://icecast.radiofrance.fr/fbbreizizel-hifi.aac"
+      ]
+    },
+    {
+      "name": "ici Provence (Marseille)",
+      "region": "France · Sud",
+      "urls": [
+        "https://icecast.radiofrance.fr/fbprovence-midfi.mp3",
+        "https://icecast.radiofrance.fr/fbprovence-hifi.aac"
+      ]
+    },
+    {
+      "name": "ici Pays Basque",
+      "region": "France · Sud",
+      "urls": [
+        "https://icecast.radiofrance.fr/fbpaysbasque-midfi.mp3",
+        "https://icecast.radiofrance.fr/fbpaysbasque-hifi.aac"
+      ]
+    },
+    {
+      "name": "Couleur 3 (Suisse)",
+      "region": "Monde · Europe",
+      "urls": [
+        "https://stream.srg-ssr.ch/m/couleur3/mp3_128"
+      ]
+    },
+    {
+      "name": "Studio Brussel (Belgique)",
+      "region": "Monde · Europe",
+      "urls": [
+        "https://icecast.vrtcdn.be/stubru-high.mp3"
+      ]
+    },
+    {
+      "name": "BBC Radio 1 (Londres)",
+      "region": "Monde · Europe",
+      "urls": [
+        "https://stream.live.vc.bbcmedia.co.uk/bbc_radio_one"
+      ]
+    },
+    {
+      "name": "NTS Radio (Londres)",
+      "region": "Monde · Europe",
+      "urls": [
+        "https://stream-relay-geo.ntslive.net/stream"
+      ]
+    },
+    {
+      "name": "FluxFM (Berlin)",
+      "region": "Monde · Europe",
+      "urls": [
+        "https://streams.fluxfm.de/live/mp3-320/audio/"
+      ]
+    },
+    {
+      "name": "KEXP (Seattle)",
+      "region": "Monde · Amériques",
+      "urls": [
+        "https://kexp-mp3-128.streamguys1.com/kexp128.mp3"
+      ]
+    },
+    {
+      "name": "Radio Paradise (Californie)",
+      "region": "Monde · Amériques",
+      "urls": [
+        "https://stream.radioparadise.com/mp3-192",
+        "https://stream.radioparadise.com/aac-128"
+      ]
+    },
+    {
+      "name": "SomaFM Groove Salad (San Francisco)",
+      "region": "Monde · Amériques",
+      "urls": [
+        "https://ice2.somafm.com/groovesalad-128-mp3",
+        "https://ice1.somafm.com/groovesalad-128-mp3"
+      ]
+    },
+    {
+      "name": "triple j (Australie)",
+      "region": "Monde · Océanie",
+      "urls": [
+        "https://live-radio01.mediahubaustralia.com/2TJW/mp3/"
+      ]
+    },
+    {
+      "name": "LISTEN.moe J-Pop (Japon)",
+      "region": "Monde · Asie",
+      "urls": [
+        "https://listen.moe/stream"
       ]
     }
   ],

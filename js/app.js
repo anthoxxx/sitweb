@@ -2156,7 +2156,7 @@
     const list = clone(DATA.stations);
     const render = () => {
       $("#stations").innerHTML = list.map((s, i) => `<div class="station-row form" data-i="${i}">
-        <input class="input" data-k="name" value="${esc(s.name)}" placeholder="Nom" aria-label="Nom">
+        <div style="display:grid;gap:6px"><input class="input" data-k="name" value="${esc(s.name)}" placeholder="Nom" aria-label="Nom"><input class="input" data-k="region" value="${esc(s.region || "")}" placeholder="Région (ex. France · Sud)" aria-label="Région"></div>
         <textarea class="input" data-k="urls" placeholder="https://…" aria-label="Adresses">${esc((s.urls || []).join("\n"))}</textarea>
         <div style="display:flex;gap:6px">
           <button class="btn btn-ghost btn-sm" data-act="test">Écouter</button>
@@ -2168,7 +2168,7 @@
     $("#stations").addEventListener("input", (e) => {
       const row = e.target.closest("[data-i]"), k = e.target.dataset.k; if (!row || !k) return;
       const s = list[+row.dataset.i];
-      if (k === "urls") s.urls = e.target.value.split(/\s+/).filter(Boolean); else s.name = e.target.value;
+      if (k === "urls") s.urls = e.target.value.split(/\s+/).filter(Boolean); else s[k] = e.target.value;
     });
     $("#stations").addEventListener("click", (e) => {
       const b = e.target.closest("[data-act]"); if (!b) return;
@@ -2347,7 +2347,9 @@
       box.classList.toggle("loading", cls === "loading");
     }
     function fill() {
-      sel.innerHTML = DATA.stations.map((s, i) => `<option value="${i}">${esc(s.name)}</option>`).join("");
+      const groups = [];
+      DATA.stations.forEach((st, i) => { const r = st.region || "Radios"; let g = groups.find((x) => x.r === r); if (!g) groups.push(g = { r, items: [] }); g.items.push(`<option value="${i}">${esc(st.name)}</option>`); });
+      sel.innerHTML = groups.map((g) => `<optgroup label="${esc(g.r)}">${g.items.join("")}</optgroup>`).join("");
       if (prefs.station >= DATA.stations.length) prefs.station = 0;
       sel.value = prefs.station;
       current = DATA.stations[prefs.station];
@@ -2388,9 +2390,12 @@
       if (!playing || !audio.getAttribute("src")) return;
       urlIdx++;
       if (current && urlIdx < current.urls.length) play();
-      else { playing = false; urlIdx = 0; setStatus("Flux indisponible", ""); toast("La radio ne répond pas. Réessaie dans un instant ou change de station."); }
+      else { playing = false; urlIdx = 0; setStatus("Flux indisponible", ""); toast(`${current?.name || "Cette radio"} ne répond pas. Choisis une autre station dans la liste.`); }
     });
     $("#radioPlay").addEventListener("click", toggle);
+    const zap = (d) => { const n = DATA.stations.length; prefs.station = (prefs.station + d + n) % n; sel.value = prefs.station; current = DATA.stations[prefs.station]; urlIdx = 0; prefs.want = true; savePrefs(); play(); toast(`${current.name}${current.region ? " · " + current.region : ""}`); };
+    $("#radioPrev").addEventListener("click", () => zap(-1));
+    $("#radioNext").addEventListener("click", () => zap(1));
     $("#radioMute").addEventListener("click", () => setMuted(!prefs.muted));
     $("#volDown").addEventListener("click", () => setVolume(prefs.volume - 10));
     $("#volUp").addEventListener("click", () => setVolume(prefs.volume + 10));
