@@ -2496,31 +2496,38 @@
     size(); addEventListener("resize", size);
     const hex = (h) => { const m = /#?([0-9a-f]{6})/i.exec(h || ""); const n = m ? parseInt(m[1], 16) : 0xecebe6; return [n >> 16, (n >> 8) & 255, n & 255]; };
     const flake = (x, y, r) => { ctx.beginPath(); for (let i = 0; i < 3; i++) { const a = i * Math.PI / 3; ctx.moveTo(x - Math.cos(a) * r, y - Math.sin(a) * r); ctx.lineTo(x + Math.cos(a) * r, y + Math.sin(a) * r); } ctx.stroke(); };
+    let inside = false, frame = 0;
+    const spawn = (x, y, spread) => {
+      if (parts.length > 220) parts.shift();
+      const acc = getComputedStyle(document.body).getPropertyValue("--accent").trim();
+      const base = document.body.dataset.zone ? hex(acc) : [236, 235, 230];
+      const max = 120 + Math.random() * 90;
+      parts.push({ x: x + (Math.random() - .5) * spread, y: y + (Math.random() - .5) * spread, vx: (Math.random() - .5) * .35, vy: .05 + Math.random() * .2, r: .8 + Math.random() * 1.6, life: max, max, ph: Math.random() * 6, flake: Math.random() < .3, c: Math.random() < .5 ? [255, 255, 255] : base });
+    };
     const tick = () => {
+      frame++;
+      // la neige continue de tomber même quand la souris est immobile
+      if (inside && lx !== null && !document.hidden && frame % 4 === 0) spawn(lx, ly, 14);
       ctx.clearRect(0, 0, W, H);
       parts = parts.filter((p) => p.life > 0);
       for (const p of parts) {
-        p.life -= 1; p.vy += .03; p.x += p.vx + Math.sin(p.ph += .08) * .3; p.y += p.vy;
-        const a = Math.max(0, p.life / p.max) * .9;
+        p.life -= 1; p.vy = Math.min(p.vy + .006, .55); p.x += p.vx + Math.sin(p.ph += .04) * .25; p.y += p.vy;
+        const a = Math.min(1, p.life / p.max * 1.4) * .85;
         ctx.fillStyle = ctx.strokeStyle = `rgba(${p.c[0]},${p.c[1]},${p.c[2]},${a})`;
         if (p.flake) { ctx.lineWidth = 1; flake(p.x, p.y, p.r * 2.2); } else { ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 6.283); ctx.fill(); }
       }
-      if (parts.length) requestAnimationFrame(tick); else { running = false; ctx.clearRect(0, 0, W, H); }
+      if (parts.length || inside) requestAnimationFrame(tick); else { running = false; ctx.clearRect(0, 0, W, H); }
     };
+    const start = () => { if (!running) { running = true; requestAnimationFrame(tick); } };
     addEventListener("pointermove", (e) => {
       if (e.pointerType !== "mouse") return;
       const x = e.clientX, y = e.clientY;
-      const d = lx === null ? 0 : Math.hypot(x - lx, y - ly); lx = x; ly = y;
-      const n = Math.min(4, Math.ceil(d / 14));
-      const acc = getComputedStyle(document.body).getPropertyValue("--accent").trim();
-      const base = document.body.dataset.zone ? hex(acc) : [236, 235, 230];
-      for (let i = 0; i < n; i++) {
-        if (parts.length > 140) parts.shift();
-        const max = 40 + Math.random() * 30;
-        parts.push({ x: x + (Math.random() - .5) * 8, y: y + (Math.random() - .5) * 8, vx: (Math.random() - .5) * .6, vy: .2 + Math.random() * .5, r: .8 + Math.random() * 1.6, life: max, max, ph: Math.random() * 6, flake: Math.random() < .25, c: Math.random() < .5 ? [255, 255, 255] : base });
-      }
-      if (!running && parts.length) { running = true; requestAnimationFrame(tick); }
+      const d = lx === null ? 0 : Math.hypot(x - lx, y - ly); lx = x; ly = y; inside = true;
+      for (let i = 0, n = Math.min(4, Math.ceil(d / 14)); i < n; i++) spawn(x, y, 8);
+      start();
     }, { passive: true });
+    document.documentElement.addEventListener("pointerleave", () => { inside = false; });
+    addEventListener("blur", () => { inside = false; });
   }
 
   applySettings();
