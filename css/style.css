@@ -577,6 +577,9 @@ mark { background: rgba(217,164,65,.25); color: var(--text); padding: 0 3px; }
 .auth-intro { display: grid; gap: 18px; align-content: start; }
 .auth-box .tabs { margin-top: 0; }
 @media (max-width: 900px) { .account-auth { grid-template-columns: 1fr; } }
+.google-btn { gap: 12px; margin-bottom: 4px; }
+.or { display: flex; align-items: center; gap: 12px; margin: 14px 0; font-family: var(--mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.or::before, .or::after { content: ""; flex: 1; height: 1px; background: var(--line); }
 .trail { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 250; }
 
 /* ---------- Footer ---------- */

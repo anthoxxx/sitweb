@@ -29,6 +29,12 @@ Les clients créent un compte, se connectent et retrouvent : leur panier, leurs 
   4. Espace équipe → Réglages → colle-les dans « Comptes clients », puis publie
   Les comptes, paniers, envies et commandes sont alors synchronisés sur tous les appareils, avec e-mail de confirmation et « mot de passe oublié ». Le statut des commandes se change dans Supabase (table `orders`, colonne `status`).
 
+**Connexion avec Google** (bouton « Continuer avec Google », visible quand Supabase est branché) :
+1. Google Cloud Console → APIs & Services → Credentials → Create credentials → OAuth client ID → Web application.
+   URI de redirection autorisée : `https://<ton-projet>.supabase.co/auth/v1/callback`
+2. Supabase → Authentication → Sign In / Providers → Google → active, colle le Client ID et le Client Secret.
+3. Supabase → Authentication → URL Configuration : Site URL = l'adresse de ton site (ex. `https://anthoxxx.github.io/sitweb/`), et ajoute-la dans Redirect URLs.
+
 ## Espace équipe
 
 Première connexion : identifiant `admin`, mot de passe `skx2026`. Le site te demande alors de créer ton compte administrateur ; le compte `admin` est ensuite désactivé.

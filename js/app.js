@@ -1280,9 +1280,12 @@
         if (cloud()) {
           try {
             await loadSDK();
-            sb = window.supabase.createClient(S().supabaseUrl, S().supabaseKey);
+            sb = window.supabase.createClient(S().supabaseUrl, S().supabaseKey, { auth: { flowType: "pkce", detectSessionInUrl: true, persistSession: true } });
             const { data } = await sb.auth.getSession();
-            if (data.session) { user = { id: data.session.user.id, email: data.session.user.email }; await loadProfile(); }
+            if (data.session) { user = { id: data.session.user.id, email: data.session.user.email, meta: data.session.user.user_metadata || {} }; await loadProfile(); }
+            // retour de la connexion Google : on nettoie l'adresse et on ouvre l'espace client
+            if (/[?&]code=/.test(location.search)) history.replaceState(null, "", location.pathname + (session.get("skx_oauth") ? "#/compte" : location.hash));
+            if (user && session.get("skx_oauth")) { session.del("skx_oauth"); location.hash = "#/compte"; }
             sb.auth.onAuthStateChange((_e, sess) => { if (!sess) { user = null; profile = null; refreshHeader(); } });
           } catch (e) { console.warn(e); sb = null; }
         } else {
@@ -1297,7 +1300,7 @@
       if (sb) {
         const { data } = await sb.from("profiles").select("*").eq("id", user.id).maybeSingle();
         profile = Object.assign(blank(), data ? { firstName: data.first_name || "", lastName: data.last_name || "", phone: data.phone || "", address: data.address || "", zip: data.zip || "", city: data.city || "", cart: data.cart || [], wishlist: data.wishlist || [] } : {});
-        if (!data) await saveProfile(profile);
+        if (!data) { const m = user.meta || {}; profile.firstName = m.given_name || (m.full_name || m.name || "").split(" ")[0] || ""; profile.lastName = m.family_name || ""; await saveProfile(profile); }
       }
       mergeOnLogin();
     }
@@ -1351,6 +1354,12 @@
       store.del("skx_customer"); user = null; profile = null;
       cart = []; wish = []; store.set("skx_cart", cart); store.set("skx_wish", wish); renderCart(); renderWishCount(); refreshHeader();
     }
+    async function google() {
+      if (!sb) throw new Error("La connexion Google sera disponible dès que les comptes en ligne (Supabase) seront activés.");
+      session.set("skx_oauth", 1);
+      const { error } = await sb.auth.signInWithOAuth({ provider: "google", options: { redirectTo: location.origin + location.pathname } });
+      if (error) { session.del("skx_oauth"); throw new Error(/not enabled/i.test(error.message) ? "La connexion Google n'est pas encore activée dans Supabase." : error.message); }
+    }
     async function reset(email) {
       if (!sb) throw new Error("La réinitialisation par e-mail sera disponible quand les comptes en ligne seront activés. Contacte-nous en attendant.");
       const { error } = await sb.auth.resetPasswordForEmail(email.trim(), { redirectTo: location.origin + location.pathname + "#/compte" });
@@ -1376,7 +1385,7 @@
       $("#accountName").textContent = user ? n : "";
       $("#accountBtn").title = user ? "Mon compte" : "Se connecter";
     }
-    return { init, cloud: () => !!sb, user: () => user, profile: () => profile, signup, login, logout, reset, saveProfile, push, addOrder, orders, changePassword };
+    return { init, google, cloud: () => !!sb, user: () => user, profile: () => profile, signup, login, logout, reset, saveProfile, push, addOrder, orders, changePassword };
   })();
 
   let accountTab = "panier";
@@ -1391,6 +1400,8 @@
           <ul class="benefits"><li>Retrouve ton panier sur tous tes appareils</li><li>Suis tes commandes et ton historique</li><li>Garde ta liste d'envies</li><li>Adresse pré-remplie pour commander plus vite</li><li>Tes codes et offres privées</li></ul></div>
         <div class="box auth-box">
           <div class="tabs" style="margin-bottom:18px"><button class="tab active" data-auth="login">Se connecter</button><button class="tab" data-auth="signup">Créer un compte</button></div>
+          ${Accounts.cloud() ? `<button class="btn btn-ghost btn-block google-btn" id="googleBtn" type="button"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="#EA4335" d="M12 10.2v3.9h5.5c-.2 1.3-1.6 3.8-5.5 3.8-3.3 0-6-2.7-6-6.1s2.7-6.1 6-6.1c1.9 0 3.1.8 3.8 1.5l2.6-2.5C16.8 3.2 14.6 2.2 12 2.2 6.6 2.2 2.2 6.6 2.2 12s4.4 9.8 9.8 9.8c5.7 0 9.4-4 9.4-9.6 0-.6-.1-1.1-.2-1.6H12z"/></svg>Continuer avec Google</button>
+          <div class="or"><span>ou avec ton e-mail</span></div>` : ""}
           <form class="form" id="authForm">
             <label class="only-signup" hidden><span>Prénom</span><input id="au-first" name="first" autocomplete="given-name"></label>
             <label><span>E-mail</span><input id="au-email" name="email" type="email" required autocomplete="email"></label>
@@ -1410,6 +1421,7 @@
         $("#authBtn").textContent = m === "signup" ? "Créer mon compte" : "Se connecter";
       };
       $$("[data-auth]", app).forEach((b) => b.addEventListener("click", () => setMode(b.dataset.auth)));
+      $("#googleBtn")?.addEventListener("click", async () => { try { await Accounts.google(); } catch (e) { toast(e.message); } });
       $("#forgot").addEventListener("click", async () => {
         const em = $("#au-email").value; if (!em) { toast("Écris d'abord ton e-mail."); return; }
         try { await Accounts.reset(em); toast("Un lien pour changer ton mot de passe t'a été envoyé."); } catch (e) { toast(e.message); }
