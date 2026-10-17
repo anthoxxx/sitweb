@@ -7,7 +7,7 @@
  *   - « Télécharger boutique-data.js » puis remplacer ce fichier à la main.
  */
 window.SKX_DATA = {
-  "version": 4,
+  "version": 5,
   "settings": {
     "shopName": "SKX",
     "slogan": "Ta fierté, ton progrès.",
@@ -17,11 +17,34 @@ window.SKX_DATA = {
     "orderEndpoint": "",
     "freeShippingFrom": 80,
     "shippingPrice": 5.9,
-    "announcement": "Livraison offerte dès 80 € — Retours 30 jours — Personnalise ton coloris et ton motif",
+    "announcement": "Livraison offerte dès 80 € | Code bienvenue : −10 %",
     "adminPasswordHash": "",
     "githubRepo": "anthoxxx/sitweb",
     "githubBranch": "claude/nice-clarke-bl2gc9",
-    "founded": "2014"
+    "founded": "2014",
+    "heroText": "Des pièces pensées pour suivre toutes tes aventures. Sport, culture, style et durabilité.",
+    "shipDelay": "2 à 3 jours ouvrés",
+    "returnDays": 30,
+    "paymentMethods": "Carte bancaire",
+    "welcome": {
+      "enabled": true,
+      "code": "BIENVENUE10",
+      "percent": 10,
+      "delay": 12
+    },
+    "social": {
+      "instagram": "",
+      "tiktok": "",
+      "youtube": ""
+    },
+    "legal": {
+      "company": "",
+      "form": "",
+      "address": "",
+      "siret": "",
+      "director": "",
+      "host": "GitHub Pages (GitHub Inc., 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, États-Unis)"
+    }
   },
   "team": [],
   "stations": [
@@ -385,7 +408,12 @@ window.SKX_DATA = {
           "hex": "#33433a"
         }
       ],
-      "customizable": true
+      "customizable": true,
+      "isNew": false,
+      "bestseller": true,
+      "images": [],
+      "fitTip": "Coupe oversize. Entre deux tailles, prends la taille en dessous pour un tombé plus ajusté.",
+      "benefits": []
     },
     {
       "id": "p-glacier",
@@ -460,7 +488,12 @@ window.SKX_DATA = {
           "hex": "#18191b"
         }
       ],
-      "customizable": true
+      "customizable": true,
+      "isNew": false,
+      "bestseller": false,
+      "images": [],
+      "fitTip": "Coupe droite, prévue pour superposer un hoodie. Prends ta taille habituelle.",
+      "benefits": []
     },
     {
       "id": "p-altitude",
@@ -513,7 +546,12 @@ window.SKX_DATA = {
           "hex": "#b8873e"
         }
       ],
-      "customizable": false
+      "customizable": false,
+      "isNew": false,
+      "bestseller": false,
+      "images": [],
+      "fitTip": "Taille unique, maille extensible.",
+      "benefits": []
     },
     {
       "id": "p-argile",
@@ -586,7 +624,12 @@ window.SKX_DATA = {
           "hex": "#5d6345"
         }
       ],
-      "customizable": true
+      "customizable": true,
+      "isNew": false,
+      "bestseller": true,
+      "images": [],
+      "fitTip": "Ce modèle taille normalement. Entre deux tailles, prends la taille au-dessus.",
+      "benefits": []
     },
     {
       "id": "p-racine",
@@ -660,7 +703,12 @@ window.SKX_DATA = {
           "hex": "#5d6345"
         }
       ],
-      "customizable": false
+      "customizable": false,
+      "isNew": false,
+      "bestseller": false,
+      "images": [],
+      "fitTip": "Ce modèle taille normalement. Entre deux tailles, prends la taille au-dessus.",
+      "benefits": []
     },
     {
       "id": "p-desert",
@@ -719,7 +767,12 @@ window.SKX_DATA = {
           "hex": "#18191b"
         }
       ],
-      "customizable": true
+      "customizable": true,
+      "isNew": false,
+      "bestseller": false,
+      "images": [],
+      "fitTip": "Taille unique réglable.",
+      "benefits": []
     },
     {
       "id": "p-averse",
@@ -793,7 +846,12 @@ window.SKX_DATA = {
           "hex": "#9fb3c2"
         }
       ],
-      "customizable": true
+      "customizable": true,
+      "isNew": false,
+      "bestseller": true,
+      "images": [],
+      "fitTip": "Coupe droite, prévue pour superposer un hoodie. Prends ta taille habituelle.",
+      "benefits": []
     },
     {
       "id": "p-orage",
@@ -863,7 +921,12 @@ window.SKX_DATA = {
           "hex": "#4a5862"
         }
       ],
-      "customizable": true
+      "customizable": true,
+      "isNew": false,
+      "bestseller": false,
+      "images": [],
+      "fitTip": "Coupe oversize. Entre deux tailles, prends la taille en dessous pour un tombé plus ajusté.",
+      "benefits": []
     },
     {
       "id": "p-bruine",
@@ -922,7 +985,12 @@ window.SKX_DATA = {
           "hex": "#18191b"
         }
       ],
-      "customizable": true
+      "customizable": true,
+      "isNew": false,
+      "bestseller": false,
+      "images": [],
+      "fitTip": "Taille unique réglable.",
+      "benefits": []
     },
     {
       "id": "p-zenith",
@@ -991,7 +1059,12 @@ window.SKX_DATA = {
           "hex": "#18191b"
         }
       ],
-      "customizable": true
+      "customizable": true,
+      "isNew": false,
+      "bestseller": true,
+      "images": [],
+      "fitTip": "Ce modèle taille normalement. Entre deux tailles, prends la taille au-dessus.",
+      "benefits": []
     },
     {
       "id": "p-aube",
@@ -1065,7 +1138,12 @@ window.SKX_DATA = {
           "hex": "#8d8d88"
         }
       ],
-      "customizable": false
+      "customizable": false,
+      "isNew": false,
+      "bestseller": false,
+      "images": [],
+      "fitTip": "Ce modèle taille normalement. Entre deux tailles, prends la taille au-dessus.",
+      "benefits": []
     },
     {
       "id": "p-solstice",
@@ -1124,7 +1202,12 @@ window.SKX_DATA = {
           "hex": "#18191b"
         }
       ],
-      "customizable": true
+      "customizable": true,
+      "isNew": false,
+      "bestseller": false,
+      "images": [],
+      "fitTip": "Taille unique réglable.",
+      "benefits": []
     },
     {
       "id": "p-cime",
@@ -1199,7 +1282,12 @@ window.SKX_DATA = {
           "hex": "#c8b79a"
         }
       ],
-      "customizable": true
+      "customizable": true,
+      "isNew": true,
+      "bestseller": false,
+      "images": [],
+      "fitTip": "Coupe droite, prévue pour superposer un hoodie. Prends ta taille habituelle.",
+      "benefits": []
     },
     {
       "id": "p-crete",
@@ -1273,7 +1361,12 @@ window.SKX_DATA = {
           "hex": "#9fb3c2"
         }
       ],
-      "customizable": true
+      "customizable": true,
+      "isNew": true,
+      "bestseller": false,
+      "images": [],
+      "fitTip": "Coupe oversize. Entre deux tailles, prends la taille en dessous pour un tombé plus ajusté.",
+      "benefits": []
     },
     {
       "id": "p-mini-sommet",
@@ -1352,7 +1445,12 @@ window.SKX_DATA = {
           "hex": "#9b3b2e"
         }
       ],
-      "customizable": true
+      "customizable": true,
+      "isNew": true,
+      "bestseller": false,
+      "images": [],
+      "fitTip": "Coupe oversize. Entre deux tailles, prends la taille en dessous pour un tombé plus ajusté.",
+      "benefits": []
     },
     {
       "id": "p-mini-argile",
@@ -1421,7 +1519,12 @@ window.SKX_DATA = {
           "hex": "#18191b"
         }
       ],
-      "customizable": true
+      "customizable": true,
+      "isNew": true,
+      "bestseller": false,
+      "images": [],
+      "fitTip": "Ce modèle taille normalement. Entre deux tailles, prends la taille au-dessus.",
+      "benefits": []
     },
     {
       "id": "p-redescente",
@@ -1490,7 +1593,12 @@ window.SKX_DATA = {
           "hex": "#18191b"
         }
       ],
-      "customizable": true
+      "customizable": true,
+      "isNew": true,
+      "bestseller": false,
+      "images": [],
+      "fitTip": "Ce modèle taille normalement. Entre deux tailles, prends la taille au-dessus.",
+      "benefits": []
     }
   ],
   "zones": {
@@ -1682,5 +1790,80 @@ window.SKX_DATA = {
       "enabled": true,
       "price": 3
     }
+  },
+  "textOptions": {
+    "enabled": true,
+    "numberPrice": 4.9,
+    "namePrice": 6.9,
+    "packPrice": 9.9
+  },
+  "packs": [
+    {
+      "id": "pk-aventure",
+      "name": "Pack Aventure",
+      "items": [
+        "p-crete",
+        "p-aube",
+        "p-bruine"
+      ],
+      "percent": 15,
+      "description": "Hoodie Crête, Jogging Aube et Casquette Bruine : la tenue complète pour bouger dehors."
+    },
+    {
+      "id": "pk-duo",
+      "name": "Pack Duo Tees",
+      "items": [
+        "p-argile",
+        "p-redescente"
+      ],
+      "percent": 10,
+      "description": "Deux tees lourds en coton bio, un pour la semaine, un pour le week-end."
+    }
+  ],
+  "reviews": [],
+  "faq": [
+    {
+      "q": "Quelle taille choisir ?",
+      "a": "Regarde le guide des tailles et le conseil de coupe sur chaque fiche produit. Entre deux tailles, prends la taille au-dessus pour plus de confort."
+    },
+    {
+      "q": "Le produit taille-t-il grand ou petit ?",
+      "a": "Les coupes SKX sont plutôt amples. Le conseil de coupe est indiqué sur chaque fiche."
+    },
+    {
+      "q": "Quels sont les délais de livraison ?",
+      "a": "Les commandes sont expédiées sous 2 à 3 jours ouvrés. Un numéro de suivi t'est envoyé par e-mail dès l'expédition."
+    },
+    {
+      "q": "Puis-je retourner l'article ?",
+      "a": "Oui, tu as 30 jours après réception. Les articles doivent être non portés, non lavés et avec leurs étiquettes. Les pièces personnalisées ne sont pas reprises, sauf défaut."
+    },
+    {
+      "q": "Le logo est-il brodé ou collé ?",
+      "a": "Le logo SKX est brodé en bas à gauche. Une étiquette SKX est aussi présente dans le col ou à l'intérieur."
+    },
+    {
+      "q": "Peut-on personnaliser un maillot ?",
+      "a": "Oui, sur les pièces personnalisables : coloris, dessin, numéro et prénom. L'aperçu se met à jour sur la fiche produit."
+    },
+    {
+      "q": "Les codes promo sont-ils cumulables ?",
+      "a": "Non, les codes promo ne sont pas cumulables sauf mention contraire. Les offres sont valables selon les dates indiquées et dans la limite des stocks disponibles."
+    }
+  ],
+  "story": {
+    "title": "Une marque née du sport, de la culture et de l'aventure",
+    "history": "Notre marque est née d'une idée simple : créer des pièces capables de suivre toutes les aventures. Du terrain à la ville, du voyage au quotidien, nous imaginons des vêtements qui allient style, confort et personnalité.",
+    "values": "Chaque création est pensée pour celles et ceux qui vivent leurs passions à fond : sport, découverte, culture, route, liberté.",
+    "mission": "Créer des pièces stylées, confortables et durables, adaptées à toutes les aventures : sport, ville, route, découverte et lifestyle.",
+    "team": "Derrière chaque pièce, une équipe animée par le style, le design et l'envie de créer une expérience unique.",
+    "quality": "Nous attachons une importance particulière aux détails : broderie soignée, matières confortables, coupe maîtrisée et finitions propres.",
+    "commitments": [
+      "Qualité des matières",
+      "Broderie soignée",
+      "Détails pensés pour durer",
+      "Expérience client simple et fluide",
+      "Style sport, culture, aventure"
+    ]
   }
 };

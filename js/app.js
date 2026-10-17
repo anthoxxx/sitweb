@@ -53,12 +53,12 @@
   const STATUSES = ["Prototype", "Validé", "En production", "Arrêté"];
   const NEAR_COUNTRIES = ["france", "portugal", "espagne", "italie", "allemagne", "belgique", "pays-bas", "autriche", "suisse", "grèce", "pologne", "roumanie", "bulgarie", "lituanie", "lettonie", "estonie", "république tchèque", "slovénie", "croatie", "hongrie", "slovaquie", "danemark", "suède", "irlande", "royaume-uni", "turquie", "maroc", "tunisie", "europe"];
   const ROLES = {
-    admin: { label: "Admin", desc: "Accès total, gère l'équipe", tabs: ["dashboard", "products", "specs", "materials", "charter", "promos", "designs", "zones", "history", "people", "radio", "orders", "team", "settings", "account"], publish: true },
-    gestion: { label: "Gestion", desc: "Boutique, stock, radio", tabs: ["dashboard", "products", "specs", "materials", "charter", "promos", "designs", "zones", "history", "people", "radio", "orders", "account"], publish: true },
+    admin: { label: "Admin", desc: "Accès total, gère l'équipe", tabs: ["dashboard", "products", "specs", "materials", "charter", "promos", "designs", "reviews", "zones", "history", "people", "radio", "orders", "team", "settings", "account"], publish: true },
+    gestion: { label: "Gestion", desc: "Boutique, stock, radio", tabs: ["dashboard", "products", "specs", "materials", "charter", "promos", "designs", "reviews", "zones", "history", "people", "radio", "orders", "account"], publish: true },
     atelier: { label: "Atelier", desc: "Matières et fiches techniques", tabs: ["dashboard", "specs", "materials", "charter", "account"], publish: true },
     lecture: { label: "Lecture", desc: "Consultation seule", tabs: ["dashboard", "products", "specs", "materials", "charter", "account"], publish: false, readOnly: true }
   };
-  const TAB_LABELS = { dashboard: "Tableau de bord", products: "Produits", specs: "Fiches techniques", materials: "Matières", charter: "Cahier des charges", promos: "Promotions", designs: "Personnalisation", zones: "Zones", history: "Histoire", people: "Page équipe", radio: "Radio", orders: "Commandes", team: "Accès", settings: "Réglages", account: "Mon compte" };
+  const TAB_LABELS = { dashboard: "Tableau de bord", products: "Produits", specs: "Fiches techniques", materials: "Matières", charter: "Cahier des charges", promos: "Promotions", designs: "Personnalisation", reviews: "Avis & FAQ", zones: "Zones", history: "Histoire", people: "Page équipe", radio: "Radio", orders: "Commandes", team: "Accès", settings: "Réglages", account: "Mon compte" };
 
   /* ---------- Données ---------- */
   let PUBLISHED = normalize(clone(window.SKX_DATA || {}));
@@ -79,6 +79,14 @@
     d.team = Array.isArray(d.team) ? d.team : [];
     d.designs = Array.isArray(d.designs) && d.designs.length ? d.designs : clone(base.designs || [{ id: "none", name: "Uni", price: 0, enabled: true, image: "" }]);
     d.promos = Object.assign(clone(base.promos || { maxCode: 70, maxSale: 50, codes: [], sales: [], volume: { enabled: false, tiers: [] }, giftWrap: { enabled: false, price: 0 } }), d.promos || {});
+    d.packs = Array.isArray(d.packs) ? d.packs : clone(base.packs || []);
+    d.reviews = Array.isArray(d.reviews) ? d.reviews : [];
+    d.faq = Array.isArray(d.faq) ? d.faq : clone(base.faq || []);
+    d.story = Object.assign(clone(base.story || {}), d.story || {});
+    d.textOptions = Object.assign(clone(base.textOptions || { enabled: false }), d.textOptions || {});
+    d.settings.welcome = Object.assign({ enabled: false, code: "", percent: 10, delay: 12 }, (base.settings || {}).welcome, d.settings.welcome);
+    d.settings.legal = Object.assign({}, (base.settings || {}).legal, d.settings.legal);
+    d.settings.social = Object.assign({}, (base.settings || {}).social, d.settings.social);
     d.promos.maxCode = Math.min(+d.promos.maxCode || 70, 70); d.promos.maxSale = Math.min(+d.promos.maxSale || 50, 50);
     d.people.forEach((m) => { m.avatar = Object.assign({ hair: "court", facial: "aucune", acc: "aucun", top: "#1c1f22", bg: "streetwear", skin: "#cbc3b4", hairColor: "#1b1a19" }, m.avatar || {}); });
     d.products.forEach((p) => { ensureSpec(p); if (!ZONE_IDS.includes(p.zone)) p.zone = "streetwear"; if (!GENDERS[p.gender]) p.gender = "mixte"; delete p.univers; if (!Array.isArray(p.colors) || !p.colors.length) p.colors = [{ name: "Unique", hex: p.color || "#c9c4b8" }]; if (p.customizable === undefined) p.customizable = ["tshirt", "hoodie", "veste", "casquette"].includes(p.type); });
@@ -235,6 +243,8 @@
   const normCode = (c) => String(c || "").trim().toUpperCase();
   const codeHash = (c) => cyrb53(normCode(c), 2014);
   function findCode(code) {
+    const w = S().welcome;
+    if (w && w.enabled && w.code && normCode(code) === normCode(w.code)) return { percent: Math.min(+w.percent || 0, 70), active: true };
     const h = codeHash(code), t = today();
     return (P().codes || []).find((c) => c.hash === h && c.active && (!c.expires || c.expires >= t)) || null;
   }
@@ -253,6 +263,8 @@
     $("#navSoldes").hidden = !sales.length;
     $("#footerSlogan").textContent = s.slogan || "";
     $("#founded").textContent = s.founded || "2014";
+    const so = s.social || {};
+    $("#socialLinks").innerHTML = [["instagram", "Instagram"], ["tiktok", "TikTok"], ["youtube", "YouTube"]].filter(([k]) => so[k]).map(([k, n]) => `<a href="${esc(so[k])}" target="_blank" rel="noopener">${n}</a>`).join("");
     $$(".contact-mail").forEach((a) => { a.href = s.contactEmail ? `mailto:${s.contactEmail}` : "#"; a.textContent = s.contactEmail || ""; });
     const u = currentUser();
     $("#teamName").textContent = u ? u.name.split(" ")[0] : "";
@@ -275,31 +287,71 @@
   });
   $("#nav").addEventListener("click", (e) => { if (e.target.closest("a")) { $("#nav").classList.remove("open"); $("#burger").setAttribute("aria-expanded", false); } });
 
+  /* ---------- Avis, envies ---------- */
+  const reviewsFor = (id) => (DATA.reviews || []).filter((r) => r.approved !== false && (!id || r.productId === id));
+  function ratingOf(id) { const r = reviewsFor(id); return r.length ? { avg: r.reduce((a, x) => a + (+x.rating || 0), 0) / r.length, n: r.length } : null; }
+  const stars = (v) => `<span class="stars" aria-label="${num(v, 1)} sur 5">${[1, 2, 3, 4, 5].map((i) => `<i class="${v >= i - .25 ? "on" : v >= i - .75 ? "half" : ""}"></i>`).join("")}</span>`;
+  let wish = store.get("skx_wish", []);
+  const isWished = (id) => wish.includes(id);
+  function toggleWish(id) {
+    wish = isWished(id) ? wish.filter((x) => x !== id) : [id, ...wish];
+    store.set("skx_wish", wish); renderWishCount();
+    $$(`[data-wish="${id}"]`).forEach((b) => b.classList.toggle("on", isWished(id)));
+    toast(isWished(id) ? "Ajouté à ta liste d'envies." : "Retiré de ta liste d'envies.");
+  }
+  function renderWishCount() { const c = $("#wishCount"); if (c) { c.textContent = wish.filter((id) => productById(id)).length; c.hidden = !+c.textContent; } }
+  const heart = (id) => `<button class="wish ${isWished(id) ? "on" : ""}" data-wish="${esc(id)}" aria-label="Liste d'envies"><svg viewBox="0 0 24 24" width="16" height="16"><path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.5-7 10-7 10z"/></svg></button>`;
+
   /* ---------- Cartes produits ---------- */
+  function badgeFor(p, pi, off) {
+    if ((+p.stock || 0) <= 0) return `<span class="tag tag-r tag-out">Épuisé</span>`;
+    if (pi.sale) return `<span class="tag tag-r tag-sale">${pi.sale.percent >= 50 ? "Dernière démarque" : "Soldes"} −${off} %</span>`;
+    if (off) return `<span class="tag tag-r tag-promo">Promo −${off} %</span>`;
+    if (p.isNew) return `<span class="tag tag-r tag-new">Nouveau</span>`;
+    if (p.bestseller) return `<span class="tag tag-r tag-best">Best-seller</span>`;
+    if (p.zone === "premiere") return `<span class="tag tag-r tag-limited">Édition limitée</span>`;
+    if ((+p.stock || 0) <= 5) return `<span class="tag tag-r tag-promo">Derniers</span>`;
+    return "";
+  }
   function productCard(p) {
     const u = DATA.zones[p.zone];
     const out = (+p.stock || 0) <= 0;
     const pi = priceInfo(p);
     const off = pi.was ? Math.round(100 - (pi.now / pi.was) * 100) : 0;
     const colors = (p.colors || []).slice(0, 5);
+    const rt = ratingOf(p.id);
+    const second = (p.images || [])[0];
     return `<article class="card" data-product="${esc(p.id)}" tabindex="0">
-      <div class="card-img">
+      <div class="card-img ${second ? "has-alt" : ""}">
         ${productVisual(p)}
+        ${second ? `<img class="alt" src="${esc(second)}" alt="${esc(p.name)} porté" loading="lazy">` : ""}
         ${u ? `<span class="tag"><span class="sw sw-${p.zone}"></span>${esc(u.name)}</span>` : ""}
-        ${out ? `<span class="tag tag-r tag-out">Épuisé</span>` : pi.sale ? `<span class="tag tag-r tag-sale">Soldes −${off} %</span>` : off ? `<span class="tag tag-r tag-promo">−${off} %</span>` : p.zone === "premiere" ? `<span class="tag tag-r tag-limited">Série limitée</span>` : (+p.stock || 0) <= 5 ? `<span class="tag tag-r tag-promo">Derniers</span>` : ""}
+        ${badgeFor(p, pi, off)}
+        ${heart(p.id)}
+        ${out ? "" : `<div class="qa" aria-label="Ajout rapide"><span class="label">Ajout rapide</span><div>${(p.sizes || ["Unique"]).map((s) => `<button data-qa="${esc(p.id)}" data-qs="${esc(s)}">${esc(s)}</button>`).join("")}</div></div>`}
       </div>
       <div class="card-row">
         <h3>${esc(p.name)}</h3>
         <span class="price">${priceHTML(p)}</span>
       </div>
       <div class="card-row card-meta">
-        <span class="sub">${esc(GENDERS[p.gender] || "")} · ${esc(TYPES[p.type] || "")}</span>
+        <span class="sub">${rt ? `${stars(rt.avg)} <span>(${rt.n})</span>` : `${esc(GENDERS[p.gender] || "")} · ${esc(TYPES[p.type] || "")}`}</span>
         ${colors.length > 1 ? `<span class="dots">${colors.map((c) => `<i style="background:${esc(c.hex)}" title="${esc(c.name)}"></i>`).join("")}</span>` : ""}
       </div>
     </article>`;
   }
-  const grid = (list) => list.length ? `<div class="grid">${list.map(productCard).join("")}</div>` : `<div class="empty">Aucun article pour le moment. Les prochains drops arrivent.</div>`;
-  document.addEventListener("click", (e) => { const c = e.target.closest("[data-product]"); if (c) openProduct(c.dataset.product); });
+  const grid = (list) => list.length ? `<div class="grid">${list.map(productCard).join("")}</div>` : `<div class="empty">Aucun article ici pour le moment. Les prochains drops arrivent.</div>`;
+  document.addEventListener("click", (e) => {
+    const w = e.target.closest("[data-wish]"); if (w) { e.stopPropagation(); toggleWish(w.dataset.wish); return; }
+    const qa = e.target.closest("[data-qa]");
+    if (qa) {
+      const p = productById(qa.dataset.qa);
+      addToCart({ id: p.id, size: qa.dataset.qs, qty: 1, color: (p.colors || []).length > 1 ? p.colors[0].name : "", colorHex: p.color, design: "none" });
+      toast(`${p.name}, taille ${qa.dataset.qs}, ajouté au panier.`); return;
+    }
+    if (e.target.closest(".qa")) return;
+    const c = e.target.closest("[data-product]"); if (c) openProduct(c.dataset.product);
+  });
   document.addEventListener("keydown", (e) => { if (e.key === "Enter" && e.target.matches?.("[data-product]")) openProduct(e.target.dataset.product); });
 
   /* Recommandations : compléter la tenue */
@@ -307,12 +359,47 @@
     const inCartTypes = new Set(exclude.map((id) => productById(id)?.type).filter(Boolean));
     return DATA.products
       .filter((p) => !exclude.includes(p.id) && (+p.stock || 0) > 0)
-      .map((p) => ({ p, s: (inCartTypes.has(p.type) ? 0 : 3) + (p.zone === zone ? 2 : 0) + (p.zone === "accessoires" ? 1.5 : 0) + (saleFor(p) ? 1 : 0) + (p.featured ? .5 : 0) + Math.random() * .4 }))
+      .map((p) => ({ p, s: (inCartTypes.has(p.type) ? 0 : 3) + (p.zone === zone ? 2 : 0) + (p.zone === "accessoires" ? 1.5 : 0) + (saleFor(p) ? 1 : 0) + (p.bestseller ? 1 : 0) + Math.random() * .4 }))
       .sort((a, b) => b.s - a.s).slice(0, n).map((x) => x.p);
   }
   const miniCard = (p) => `<button class="mini" data-product="${esc(p.id)}"><span class="mini-img">${productVisual(p)}</span><span class="mini-txt"><b>${esc(p.name)}</b><span class="price">${priceHTML(p)}</span></span></button>`;
   const seen = () => store.get("skx_seen", []).filter((id) => productById(id));
   function markSeen(id) { const s = seen().filter((x) => x !== id); s.unshift(id); store.set("skx_seen", s.slice(0, 8)); }
+
+  /* Packs */
+  const packItems = (pk) => (pk.items || []).map(productById).filter(Boolean);
+  function packPrice(pk) { const items = packItems(pk); const full = items.reduce((a, p) => a + priceInfo(p).now, 0); return { full, now: round2(full * (1 - Math.min(+pk.percent || 0, 50) / 100)) }; }
+  function packCard(pk) {
+    const items = packItems(pk); if (!items.length) return "";
+    const pp = packPrice(pk);
+    return `<article class="pack">
+      <div class="pack-imgs">${items.map((p) => `<button class="pack-img" data-product="${esc(p.id)}" aria-label="${esc(p.name)}">${productVisual(p)}</button>`).join("")}</div>
+      <div class="pack-body"><span class="label">Pack · −${pk.percent} %</span><h3>${esc(pk.name)}</h3><p class="muted">${esc(pk.description || "")}</p>
+        <div class="price">${money(pp.now)} <s>${money(pp.full)}</s></div>
+        <span class="label">Ajoute ces ${items.length} pièces au panier (dans la taille de ton choix) : la remise s'applique automatiquement.</span>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">${items.map((p) => `<button class="chip" data-product="${esc(p.id)}">${esc(p.name)}</button>`).join("")}</div>
+      </div></article>`;
+  }
+
+  /* ---------- Personnalisation : prix des options ---------- */
+  const TO = () => DATA.textOptions || { enabled: false };
+  function extrasPrice(design, number, name) {
+    const d = +(designById(design)?.price || 0);
+    const n = number ? +TO().numberPrice || 0 : 0, m = name ? +TO().namePrice || 0 : 0;
+    const sum = d + n + m;
+    return design && design !== "none" && number && name ? Math.min(sum, +TO().packPrice || sum) : sum;
+  }
+  function backSVG(p, color, number, name) {
+    const sh = SHAPES[p.type] || SHAPES.tshirt;
+    const ink = lum(color) > .5 ? "#151413" : "#efece4";
+    return `<svg viewBox="0 0 200 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Dos personnalisé">
+      <rect width="200" height="250" fill="#121211"/>
+      <g transform="translate(0,22)"><path d="${sh.body}" fill="${esc(color)}" stroke="rgba(0,0,0,.55)" stroke-width="1"/>
+      ${name ? `<text x="100" y="80" text-anchor="middle" font-family="Archivo, sans-serif" font-weight="800" font-size="13" letter-spacing="2" fill="${ink}">${esc(String(name).toUpperCase())}</text>` : ""}
+      ${number ? `<text x="100" y="${name ? 140 : 128}" text-anchor="middle" font-family="Archivo, sans-serif" font-weight="800" font-size="52" fill="${ink}">${esc(number)}</text>` : ""}</g>
+      <text x="12" y="240" font-family="JetBrains Mono, monospace" font-size="6.5" fill="#8f8d85">DOS</text>
+    </svg>`;
+  }
 
   /* ---------- Fiche produit ---------- */
   function openProduct(id) {
@@ -321,65 +408,103 @@
     const sizes = p.sizes && p.sizes.length ? p.sizes : ["Unique"];
     let size = sizes.length === 1 ? sizes[0] : null, qty = 1;
     const colors = p.colors && p.colors.length ? p.colors : [{ name: "Unique", hex: p.color }];
-    let color = colors[0], design = "none";
+    let color = colors[0], design = "none", number = "", name = "";
     const designs = p.customizable ? (DATA.designs || []).filter((d) => d.enabled) : [];
+    const textOk = p.customizable && TO().enabled && ["tshirt", "hoodie", "veste"].includes(p.type);
     const stock = +p.stock || 0;
     const u = DATA.zones[p.zone];
     const st = specStats(p);
     const pi = priceInfo(p);
+    const sale = pi.sale ? activeSales().find((x) => x.name === pi.sale.name) : null;
+    const daysLeft = sale ? Math.max(0, Math.ceil((new Date(sale.end + "T23:59:59") - new Date()) / 864e5)) : null;
     const visibleMats = st.materials.filter((m) => !["Fil", "Étiquette", "Accessoire", "Emballage"].includes(m.category));
     const recos = recommend([p.id, ...cart.map((l) => l.id)], 3, p.zone);
+    const packs = (DATA.packs || []).filter((pk) => (pk.items || []).includes(p.id));
+    const revs = reviewsFor(p.id), rt = ratingOf(p.id);
+    const benefits = (p.benefits && p.benefits.length ? p.benefits : ["Matière confortable et résistante", "Coupe sportive et moderne", "Logo brodé en bas à gauche", "Idéal pour le sport, le lifestyle et les aventures urbaines", "Entretien facile"]);
+    const pics = [null, ...(p.image ? [p.image] : []), ...(p.images || [])];
     const box = openModal(`<div class="pdp">
-      <div class="pdp-img" id="pdpImg">${productVisual(p)}</div>
+      <div class="pdp-media">
+        <div class="pdp-img" id="pdpImg"></div>
+        <div class="thumbs" id="thumbs">${pics.map((src, i) => `<button class="thumb ${i ? "" : "active"}" data-pic="${i}" aria-label="Vue ${i + 1}">${src ? `<img src="${esc(src)}" alt="">` : productSVG(p)}</button>`).join("")}<button class="thumb" data-pic="back" id="backThumb" hidden aria-label="Vue dos"></button></div>
+      </div>
       <div class="pdp-info">
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
           ${u ? `<a href="#/zone/${p.zone}" data-close class="tag"><span class="sw sw-${p.zone}"></span>${esc(u.name)}</a>` : ""}
-          ${pi.sale ? `<span class="tag tag-sale">${esc(pi.sale.name)}</span>` : ""}
+          ${pi.sale ? `<span class="tag tag-sale">${esc(pi.sale.name)}${daysLeft !== null ? ` · encore ${daysLeft} j` : ""}</span>` : ""}
+          ${p.isNew ? `<span class="tag tag-new">Nouveau</span>` : ""}${p.bestseller ? `<span class="tag tag-best">Best-seller</span>` : ""}
           ${st.share !== null && st.share >= .9 ? `<span class="tag tag-bio">${num(st.share * 100)} % fibres certifiées</span>` : ""}
+          <span style="margin-left:auto">${heart(p.id)}</span>
         </div>
         <h2>${esc(p.name)}</h2>
+        ${rt ? `<a href="#pdpReviews" class="rating-link" data-anchor-in="pdpReviews">${stars(rt.avg)} ${num(rt.avg, 1)} · ${rt.n} avis</a>` : ""}
         <div class="price" id="pdpPrice"></div>
         <p class="muted" style="margin:0">${esc(p.description)}</p>
         ${colors.length > 1 ? `<div class="opt"><span class="label">Coloris · <b id="colorName">${esc(color.name)}</b></span>
           <div class="swatches" id="pdpColors">${colors.map((c, i) => `<button class="swatch ${i ? "" : "active"}" data-c="${i}" style="--c:${esc(c.hex)}" aria-label="${esc(c.name)}" title="${esc(c.name)}"></button>`).join("")}</div></div>` : ""}
         ${designs.length > 1 ? `<div class="opt"><span class="label">Dessin</span>
           <div class="designs" id="pdpDesigns">${designs.map((d) => `<button class="design ${d.id === "none" ? "active" : ""}" data-d="${esc(d.id)}">${esc(d.name)}${+d.price ? ` <span class="mono">+${money(d.price)}</span>` : ""}</button>`).join("")}</div></div>` : ""}
-        <div class="opt"><span class="label">Taille</span>
+        ${textOk ? `<div class="opt"><span class="label">Personnalisation du dos</span>
+          <div class="perso">
+            <label><span class="label">Numéro +${money(TO().numberPrice)}</span><input id="pNum" class="input" inputmode="numeric" maxlength="2" placeholder="10"></label>
+            <label><span class="label">Prénom +${money(TO().namePrice)}</span><input id="pName" class="input" maxlength="12" placeholder="KARIM"></label>
+          </div>
+          <span class="label">Pack personnalisation complète (dessin + numéro + prénom) : ${money(TO().packPrice)}</span></div>` : ""}
+        <div class="opt"><div style="display:flex;justify-content:space-between;align-items:baseline"><span class="label">Taille</span><a class="link label" href="#/guide" data-close>Guide des tailles</a></div>
           <div class="sizes" id="pdpSizes">${sizes.map((s) => `<button class="size ${s === size ? "active" : ""}" data-size="${esc(s)}">${esc(s)}</button>`).join("")}</div>
+          ${p.fitTip ? `<p class="fit">${esc(p.fitTip)}</p>` : ""}
         </div>
         <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap">
           <div class="qty"><button data-q="-1" aria-label="Moins">−</button><span id="pdpQty">1</span><button data-q="1" aria-label="Plus">+</button></div>
-          ${stock <= 0 ? `<span class="stock-low">Épuisé</span>` : stock <= 5 ? `<span class="stock-low">Plus que ${stock} en stock</span>` : `<span class="label">En stock · expédié sous 48 h</span>`}
+          ${stock <= 0 ? `<span class="stock-low">Épuisé</span>` : stock <= 5 ? `<span class="stock-low">Plus que ${stock} pièce${stock > 1 ? "s" : ""}</span>` : `<span class="label">En stock · expédié sous ${esc(S().shipDelay || "48 h")}</span>`}
         </div>
-        <button class="btn btn-block" id="pdpAdd" ${stock <= 0 ? "disabled" : ""}>Ajouter au panier</button>
+        <div class="buy" id="buyBar">
+          <button class="btn" id="pdpAdd" ${stock <= 0 ? "disabled" : ""}>Ajouter au panier</button>
+          <button class="btn btn-ghost" id="pdpBuy" ${stock <= 0 ? "disabled" : ""}>Acheter maintenant</button>
+        </div>
+        <ul class="benefits">${benefits.map((b) => `<li>${esc(b)}</li>`).join("")}</ul>
+        ${packs.length ? `<div class="opt"><span class="label">Économise avec un pack</span>${packs.map((pk) => { const pp = packPrice(pk); return `<div class="pack-mini"><b>${esc(pk.name)}</b> <span class="price">${money(pp.now)} <s>${money(pp.full)}</s></span><div class="minis">${packItems(pk).map(miniCard).join("")}</div></div>`; }).join("")}</div>` : ""}
         <div class="compo">
-          <div class="compo-row"><span class="label">Marquage</span><div>Logo SKX brodé en bas à gauche${COLLAR[p.type] ? " · étiquette SKX dans le col" : " · étiquette tissée SKX"}</div></div>
+          <div class="compo-row"><span class="label">Marquage</span><div>Chaque pièce est pensée dans les moindres détails. Le logo est brodé en bas à gauche${COLLAR[p.type] ? ", et une étiquette SKX est présente dans le col" : ", avec une étiquette tissée SKX"}.</div></div>
           ${visibleMats.length ? `<div class="compo-row"><span class="label">Composition</span><div>${visibleMats.map((m) => `${esc(m.composition)} <span class="muted">· ${esc(m.name)}</span>`).join("<br>")}</div></div>` : ""}
           ${visibleMats.length ? `<div class="compo-row"><span class="label">Certifications</span><div class="certs">${[...new Set(visibleMats.flatMap((m) => m.certifications || []))].map((c) => `<span class="cert">${esc(c)}</span>`).join("")}</div></div>` : ""}
           ${p.spec.madeIn ? `<div class="compo-row"><span class="label">Fabrication</span><div>${esc(p.spec.madeIn)}</div></div>` : ""}
           ${p.spec.care ? `<div class="compo-row"><span class="label">Entretien</span><div>${esc(p.spec.care)}</div></div>` : ""}
         </div>
-        ${recos.length ? `<div class="opt"><span class="label">Complète la tenue</span><div class="minis">${recos.map(miniCard).join("")}</div></div>` : ""}
-        <span class="label">Livraison offerte dès ${money(S().freeShippingFrom)} · Retours 30 jours</span>
+        ${recos.length ? `<div class="opt"><span class="label">Complète ton style</span><div class="minis">${recos.map(miniCard).join("")}</div></div>` : ""}
+        <div class="opt" id="pdpReviews"><span class="label">Ils portent déjà nos pièces</span>
+          ${revs.length ? revs.slice(0, 4).map(reviewHTML).join("") : `<p class="muted" style="margin:0;font-size:14px">Pas encore d'avis sur cette pièce.</p>`}
+          <button class="btn btn-ghost btn-sm" style="justify-self:start" data-review="${esc(p.id)}">Donner mon avis</button></div>
+        <div class="opt"><span class="label">Questions fréquentes</span>${faqHTML(DATA.faq.slice(0, 6))}</div>
+        <span class="label">Livraison offerte dès ${money(S().freeShippingFrom)} · Retours ${S().returnDays || 30} jours · Paiement sécurisé</span>
       </div>
     </div>`);
-    const surcharge = () => +(designById(design)?.price || 0);
+    let pic = 0;
+    const surcharge = () => extrasPrice(design, number, name);
     const refresh = () => {
       const unit = pi.now + surcharge();
-      $("#pdpPrice", box).innerHTML = `${money(unit)}${pi.was ? `<s>${money(pi.was + surcharge())}</s>` : ""}`;
+      $("#pdpPrice", box).innerHTML = `${money(unit)}${pi.was ? `<s>${money(pi.was + surcharge())}</s>` : ""}${surcharge() ? ` <span class="label">dont personnalisation ${money(surcharge())}</span>` : ""}`;
       const custom = color !== colors[0] || design !== "none";
-      $("#pdpImg", box).innerHTML = productVisual(p, { color: color.hex, design, custom });
+      const bt = $("#backThumb", box); bt.hidden = !(number || name);
+      if (!bt.hidden) bt.innerHTML = backSVG(p, color.hex, number, name);
+      if (pic === "back" && bt.hidden) pic = 0;
+      $("#pdpImg", box).innerHTML = pic === "back" ? backSVG(p, color.hex, number, name) : pic ? `<img src="${esc(pics[pic])}" alt="${esc(p.name)}">` : productVisual(p, { color: color.hex, design, custom: true });
+      $$(".thumb", box).forEach((t) => t.classList.toggle("active", String(t.dataset.pic) === String(pic)));
+      $(".thumb[data-pic='0']", box).innerHTML = productVisual(p, { color: color.hex, design, custom });
     };
     refresh();
+    $("#thumbs", box).addEventListener("click", (e) => { const t = e.target.closest("[data-pic]"); if (!t) return; pic = t.dataset.pic === "back" ? "back" : +t.dataset.pic; refresh(); });
     $("#pdpColors", box)?.addEventListener("click", (e) => {
       const b = e.target.closest("[data-c]"); if (!b) return;
-      color = colors[+b.dataset.c]; $("#colorName", box).textContent = color.name;
+      color = colors[+b.dataset.c]; $("#colorName", box).textContent = color.name; pic = pic === "back" ? "back" : 0;
       $$(".swatch", box).forEach((x) => x.classList.toggle("active", x === b)); refresh();
     });
     $("#pdpDesigns", box)?.addEventListener("click", (e) => {
       const b = e.target.closest("[data-d]"); if (!b) return;
-      design = b.dataset.d; $$(".design", box).forEach((x) => x.classList.toggle("active", x === b)); refresh();
+      design = b.dataset.d; pic = 0; $$(".design", box).forEach((x) => x.classList.toggle("active", x === b)); refresh();
     });
+    $("#pNum", box)?.addEventListener("input", (e) => { e.target.value = e.target.value.replace(/\D/g, "").slice(0, 2); number = e.target.value; pic = number || name ? "back" : 0; refresh(); });
+    $("#pName", box)?.addEventListener("input", (e) => { e.target.value = e.target.value.replace(/[^A-Za-zÀ-ÿ' -]/g, "").slice(0, 12); name = e.target.value.trim(); pic = number || name ? "back" : 0; refresh(); });
     $("#pdpSizes", box).addEventListener("click", (e) => {
       const b = e.target.closest("[data-size]"); if (!b) return;
       size = b.dataset.size; $$(".size", box).forEach((x) => x.classList.toggle("active", x === b));
@@ -387,18 +512,57 @@
     $$("[data-q]", box).forEach((b) => b.addEventListener("click", () => {
       qty = Math.max(1, Math.min(Math.max(1, stock), qty + +b.dataset.q)); $("#pdpQty").textContent = qty;
     }));
-    $("#pdpAdd").addEventListener("click", () => {
-      if (!size) { toast("Choisis une taille."); return; }
-      addToCart({ id: p.id, size, qty, color: colors.length > 1 ? color.name : "", colorHex: color.hex, design }); closeModal(); openCart();
+    $("[data-anchor-in]", box)?.addEventListener("click", (e) => { e.preventDefault(); $("#pdpReviews", box).scrollIntoView({ behavior: "smooth" }); });
+    const add = () => {
+      if (!size) { toast("Choisis une taille."); $("#pdpSizes", box).scrollIntoView({ behavior: "smooth", block: "center" }); return false; }
+      addToCart({ id: p.id, size, qty, color: colors.length > 1 ? color.name : "", colorHex: color.hex, design, number, name }); return true;
+    };
+    $("#pdpAdd").addEventListener("click", () => { if (add()) { closeModal(); openCart(); } });
+    $("#pdpBuy").addEventListener("click", () => { if (add()) { closeModal(); checkout(); } });
+  }
+
+  /* Avis clients */
+  const reviewHTML = (r) => `<figure class="review">${stars(+r.rating || 0)}<blockquote>${esc(r.text)}</blockquote><figcaption class="label">${esc(r.name)}${r.productId && productById(r.productId) ? ` · ${esc(productById(r.productId).name)}` : ""}${r.verified ? " · achat vérifié" : ""}</figcaption></figure>`;
+  document.addEventListener("click", (e) => { const b = e.target.closest("[data-review]"); if (b) { e.stopPropagation(); reviewForm(b.dataset.review); } }, true);
+  function reviewForm(productId) {
+    const box = openModal(`<div class="modal-pad"><h2>Donner mon avis</h2>
+      <p class="muted" style="margin:0 0 16px">Ton avis est publié après vérification par l'équipe SKX.</p>
+      <form class="form" id="revForm">
+        <div class="row"><label><span>Prénom</span><input id="rv-name" name="name" required maxlength="30"></label>
+          <label><span>Pièce</span><select id="rv-prod" name="productId"><option value="">Avis sur la marque</option>${DATA.products.map((p) => `<option value="${esc(p.id)}" ${p.id === productId ? "selected" : ""}>${esc(p.name)}</option>`).join("")}</select></label></div>
+        <div class="opt"><span class="label">Note</span><div class="rate" id="rvRate">${[1, 2, 3, 4, 5].map((i) => `<button type="button" data-r="${i}" aria-label="${i} sur 5">★</button>`).join("")}</div></div>
+        <label><span>Ton avis</span><textarea id="rv-text" name="text" required maxlength="500" placeholder="Qualité, coupe, livraison…"></textarea></label>
+        <button class="btn btn-block">Envoyer mon avis</button>
+      </form></div>`, 520);
+    let rating = 5;
+    const paint = () => $$("#rvRate button", box).forEach((b) => b.classList.toggle("on", +b.dataset.r <= rating));
+    paint();
+    $("#rvRate", box).addEventListener("click", (e) => { const b = e.target.closest("[data-r]"); if (b) { rating = +b.dataset.r; paint(); } });
+    $("#revForm", box).addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const f = Object.fromEntries(new FormData(e.target));
+      const review = { type: "avis", name: f.name.trim(), productId: f.productId, rating, text: f.text.trim(), date: new Date().toISOString() };
+      const ok = await sendToTeam(review, `Nouvel avis client (${rating}/5)`, `Avis de ${review.name} (${rating}/5)${review.productId ? " sur " + productById(review.productId)?.name : ""} :\n\n${review.text}`);
+      openModal(`<div class="modal-pad" style="text-align:center;display:grid;gap:12px"><h2>Merci ${esc(review.name)}.</h2><p class="muted" style="margin:0">${ok ? "Ton avis a été envoyé à l'équipe. Il sera publié après vérification." : "Envoie-le à l'équipe avec le bouton ci-dessous."}</p>${ok ? "" : `<a class="btn" href="${esc(mailtoTeam(`Avis client`, `Avis de ${review.name} (${rating}/5)${review.productId ? " sur " + (productById(review.productId)?.name || "") : ""} :\n\n${review.text}`))}">Envoyer par email</a>`}<button class="btn btn-ghost" data-close>Fermer</button></div>`, 460);
     });
   }
+  /* Envoi à l'équipe : Formspree si réglé, sinon email */
+  async function sendToTeam(payload, subject) {
+    if (!S().orderEndpoint) return false;
+    try { const r = await fetch(S().orderEndpoint, { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" }, body: JSON.stringify({ ...payload, _subject: subject }) }); return r.ok; }
+    catch { return false; }
+  }
+  const mailtoTeam = (subject, body) => S().contactEmail ? `mailto:${S().contactEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}` : "#";
+
+  /* FAQ */
+  const faqHTML = (list) => `<div class="faq">${list.map((f) => `<details><summary>${esc(f.q)}</summary><p>${esc(f.a)}</p></details>`).join("")}</div>`;
 
   /* ---------- Panier ---------- */
   let cart = store.get("skx_cart", []);
   let promo = store.get("skx_promo", null);
   let gift = false;
-  const lineKey = (l) => [l.id, l.size, l.color || "", l.design || "none"].join("|");
-  const saveCart = () => { cart = cart.filter((l) => productById(l.id)); store.set("skx_cart", cart); renderCart(); };
+  const lineKey = (l) => [l.id, l.size, l.color || "", l.design || "none", l.number || "", l.name || ""].join("|");
+  const saveCart = () => { cart = cart.filter((l) => productById(l.id)); store.set("skx_cart", cart); store.set("skx_cart_at", Date.now()); renderCart(); };
   function addToCart(item) {
     const p = productById(item.id);
     const inCart = cart.filter((l) => l.id === item.id).reduce((a, l) => a + l.qty, 0);
@@ -410,10 +574,9 @@
     saveCart();
     const c = $("#cartCount"); c.classList.remove("bump"); void c.offsetWidth; c.classList.add("bump");
   }
-  function lineUnit(l) {
-    const p = productById(l.id);
-    return priceInfo(p).now + +(designById(l.design)?.price || 0);
-  }
+  const lineExtras = (l) => extrasPrice(l.design, l.number, l.name);
+  const lineUnit = (l) => priceInfo(productById(l.id)).now + lineExtras(l);
+  const upsell = () => { const u = session.get("skx_upsell"); return u && u.until > Date.now() ? u : null; };
   function totals() {
     const pr = P();
     let sub = 0, eligible = 0, count = 0;
@@ -423,20 +586,28 @@
       sub += amount; count += l.qty;
       if (!saleFor(p)) eligible += amount;
     }
-    let code = promo ? findCode(promo.code) : null;
+    // Remises non cumulables : on applique la meilleure
+    const options = [];
+    const code = promo ? findCode(promo.code) : null;
     if (promo && !code) { promo = null; store.del("skx_promo"); }
-    let discount = 0, discountLabel = "";
-    if (code) {
-      const pct = Math.min(+code.percent || 0, +pr.maxCode || 70);
-      discount = round2(eligible * pct / 100); discountLabel = `Code ${normCode(promo.code)} (−${pct} %)`;
-    } else if (pr.volume?.enabled) {
+    if (code) { const pct = Math.min(+code.percent || 0, +pr.maxCode || 70); options.push({ v: round2(eligible * pct / 100), label: `Code ${normCode(promo.code)} (−${pct} %)` }); }
+    if (pr.volume?.enabled) {
       const tier = (pr.volume.tiers || []).filter((t) => count >= +t.qty).sort((a, b) => b.percent - a.percent)[0];
-      if (tier) { discount = round2(sub * Math.min(+tier.percent, 50) / 100); discountLabel = `Remise ${tier.qty} pièces et + (−${tier.percent} %)`; }
+      if (tier) options.push({ v: round2(sub * Math.min(+tier.percent, 50) / 100), label: `Remise ${tier.qty} pièces et + (−${tier.percent} %)` });
     }
+    for (const pk of DATA.packs || []) {
+      const items = packItems(pk); if (!items.length) continue;
+      const times = Math.min(...items.map((p) => cart.filter((l) => l.id === p.id).reduce((a, l) => a + l.qty, 0)));
+      if (times > 0) options.push({ v: round2(times * items.reduce((a, p) => a + priceInfo(p).now, 0) * Math.min(+pk.percent || 0, 50) / 100), label: `${pk.name} (−${pk.percent} %)` });
+    }
+    const up = upsell();
+    if (up) options.push({ v: round2(sub * .1), label: `Ajout à la commande ${up.ref} (−10 %)` });
+    const best = options.sort((a, b) => b.v - a.v)[0];
+    const discount = best ? best.v : 0, discountLabel = best ? best.label : "";
     const afterDisc = sub - discount;
     const giftPrice = gift && pr.giftWrap?.enabled ? +pr.giftWrap.price || 0 : 0;
     const ship = sub === 0 || afterDisc >= +S().freeShippingFrom ? 0 : +S().shippingPrice;
-    return { sub: round2(sub), discount, discountLabel, gift: giftPrice, ship, total: round2(afterDisc + giftPrice + ship), count, afterDisc };
+    return { sub: round2(sub), discount, discountLabel, gift: giftPrice, ship, total: round2(afterDisc + giftPrice + ship), count, afterDisc, codeOverridden: !!(code && best && !best.label.startsWith("Code")) };
   }
   function nextTier(count) {
     const v = P().volume; if (!v?.enabled || promo) return null;
@@ -449,21 +620,24 @@
     if (!cart.length) {
       const recos = recommend([], 3);
       body.innerHTML = `<div class="empty" style="margin-top:20px">Ton panier est vide.<br><br><a class="btn btn-sm" href="#/boutique" data-closecart>Voir la boutique</a></div>
-        ${recos.length ? `<div class="opt" style="margin-top:20px"><span class="label">À découvrir</span><div class="minis">${recos.map(miniCard).join("")}</div></div>` : ""}`;
+        ${recos.length ? `<div class="opt" style="margin-top:20px"><span class="label">Meilleures ventes</span><div class="minis">${recos.map(miniCard).join("")}</div></div>` : ""}`;
       foot.innerHTML = ""; return;
     }
     const t = totals();
     const free = +S().freeShippingFrom, left = free - t.afterDisc, pct = Math.min(100, (t.afterDisc / free) * 100);
     const nt = nextTier(t.count);
     const recos = recommend(cart.map((l) => l.id), 3);
-    body.innerHTML = `<div class="ship-bar"><span class="label">${left > 0 ? `Plus que <b>${money(left)}</b> pour la livraison offerte` : "Livraison offerte"}</span><div class="bar"><i style="width:${pct}%"></i></div></div>
+    const up = upsell();
+    body.innerHTML = `<div class="ship-bar"><span class="label">${left > 0 ? `Plus que <b>${money(left)}</b> pour profiter de la livraison offerte` : "Livraison offerte"}</span><div class="bar"><i style="width:${pct}%"></i></div></div>
+      ${up ? `<p class="label" style="margin:8px 0 0;color:var(--ok)">Complément de ta commande ${esc(up.ref)} : −10 % et expédié avec elle.</p>` : ""}
       ${nt ? `<p class="label" style="margin:8px 0 0">Ajoute ${nt.qty - t.count} pièce${nt.qty - t.count > 1 ? "s" : ""} : −${nt.percent} % sur tout le panier</p>` : ""}
       ${cart.map((l, i) => {
         const p = productById(l.id), d = designById(l.design);
+        const opts = [l.color, d && d.id !== "none" ? d.name : "", l.number ? "n° " + l.number : "", l.name ? l.name.toUpperCase() : ""].filter(Boolean);
         return `<div class="line">
           <div class="line-img">${productVisual(p, { color: l.colorHex, design: l.design, custom: !!(l.color || (l.design && l.design !== "none")) })}</div>
           <div style="display:grid;gap:4px"><b style="font-weight:500">${esc(p.name)}</b>
-            <span class="label">Taille ${esc(l.size)}${l.color ? " · " + esc(l.color) : ""}${d && d.id !== "none" ? " · " + esc(d.name) : ""}</span>
+            <span class="label">Taille ${esc(l.size)}${opts.length ? " · " + opts.map(esc).join(" · ") : ""}</span>
             <span class="label">${money(lineUnit(l))}${saleFor(p) ? " · soldé" : ""}</span>
             <div style="display:flex;gap:12px;align-items:center;margin-top:6px">
               <div class="qty"><button data-cq="${i}" data-d="-1" aria-label="Moins">−</button><span>${l.qty}</span><button data-cq="${i}" data-d="1" aria-label="Plus">+</button></div>
@@ -472,18 +646,20 @@
           <span class="price">${money(lineUnit(l) * l.qty)}</span>
         </div>`;
       }).join("")}
-      ${recos.length ? `<div class="opt" style="margin-top:18px"><span class="label">Complète la tenue</span><div class="minis">${recos.map(miniCard).join("")}</div></div>` : ""}`;
+      ${recos.length ? `<div class="opt" style="margin-top:18px"><span class="label">Complète ton style</span><div class="minis">${recos.map(miniCard).join("")}</div></div>` : ""}`;
     foot.innerHTML = `
-      <form class="promo-form" id="promoForm">${promo ? `<span class="label">Code <b>${esc(normCode(promo.code))}</b> appliqué</span><button type="button" class="rm" id="promoRm">Retirer</button>` : `<input id="promoInput" placeholder="Code promo" aria-label="Code promo" autocomplete="off"><button class="btn btn-ghost btn-sm">Appliquer</button>`}</form>
+      <form class="promo-form" id="promoForm">${promo ? `<span class="label">Code <b>${esc(normCode(promo.code))}</b> ${t.codeOverridden ? "(une meilleure remise s'applique)" : "appliqué"}</span><button type="button" class="rm" id="promoRm">Retirer</button>` : `<input id="promoInput" placeholder="Code promo" aria-label="Code promo" autocomplete="off"><button class="btn btn-ghost btn-sm">Appliquer</button>`}</form>
       ${P().giftWrap?.enabled ? `<label class="check gift"><input type="checkbox" id="giftWrap" ${gift ? "checked" : ""}> Emballage cadeau (+${money(P().giftWrap.price)})</label>` : ""}
       <div class="totals">
         <div><span>Sous-total</span><span class="price">${money(t.sub)}</span></div>
         ${t.discount ? `<div class="disc"><span>${esc(t.discountLabel)}</span><span class="price">−${money(t.discount)}</span></div>` : ""}
         ${t.gift ? `<div><span>Emballage cadeau</span><span class="price">${money(t.gift)}</span></div>` : ""}
-        <div><span>Livraison</span><span class="price">${t.ship ? money(t.ship) : "Offerte"}</span></div>
+        <div><span>Livraison estimée</span><span class="price">${t.ship ? money(t.ship) : "Offerte"}</span></div>
         <div class="total"><span>Total</span><span class="price">${money(t.total)}</span></div>
       </div>
-      <button class="btn btn-block" id="checkoutBtn" style="margin-top:14px">Commander · ${money(t.total)}</button>`;
+      <button class="btn btn-block" id="checkoutBtn" style="margin-top:14px">Commander · ${money(t.total)}</button>
+      <div class="reassure"><span>Paiement sécurisé${S().paymentMethods ? " · " + esc(S().paymentMethods) : ""}</span><span>Retours ${S().returnDays || 30} jours</span><span>Expédition sous ${esc(S().shipDelay || "48 h")}</span></div>
+      <p class="label" style="margin:8px 0 0">Remises non cumulables : la plus avantageuse est appliquée.</p>`;
   }
   $("#cartItems").addEventListener("click", (e) => {
     const q = e.target.closest("[data-cq]"), rm = e.target.closest("[data-rm]");
@@ -506,11 +682,14 @@
     e.preventDefault();
     const v = $("#promoInput")?.value || "";
     if (!v.trim()) return;
-    const c = findCode(v);
-    if (!c) { toast("Code inconnu ou expiré."); return; }
-    promo = { code: normCode(v) }; store.set("skx_promo", promo);
-    toast(`Code appliqué : −${Math.min(+c.percent, +P().maxCode || 70)} % (hors articles soldés).`); renderCart();
+    applyCode(v);
   });
+  function applyCode(v) {
+    const c = findCode(v);
+    if (!c) { toast("Code inconnu ou expiré."); return false; }
+    promo = { code: normCode(v) }; store.set("skx_promo", promo);
+    toast(`Code appliqué : −${Math.min(+c.percent, +P().maxCode || 70)} % (hors articles soldés).`); renderCart(); return true;
+  }
   function openCart() { renderCart(); $("#drawer").classList.add("open"); $("#overlay").classList.add("open"); }
   function closeCart() { $("#drawer").classList.remove("open"); $("#overlay").classList.remove("open"); }
   $("#cartBtn").addEventListener("click", openCart);
@@ -520,7 +699,9 @@
   /* ---------- Commande ---------- */
   function checkout() {
     closeCart();
+    if (!cart.length) return;
     const t = totals();
+    const up = upsell();
     openModal(`<div class="modal-pad">
       <h2>Finaliser la commande</h2>
       <p class="muted" style="margin:0 0 20px">Total : <span class="price" style="color:var(--text)">${money(t.total)}</span>${t.discount ? ` · dont ${money(t.discount)} de remise` : ""}</p>
@@ -529,38 +710,34 @@
         <div class="row"><label><span>Email</span><input id="o-email" type="email" name="email" required autocomplete="email"></label><label><span>Téléphone</span><input id="o-tel" name="tel" autocomplete="tel"></label></div>
         <label><span>Adresse</span><input id="o-adresse" name="adresse" required autocomplete="street-address"></label>
         <div class="row"><label><span>Code postal</span><input id="o-cp" name="cp" required autocomplete="postal-code"></label><label><span>Ville</span><input id="o-ville" name="ville" required autocomplete="address-level2"></label></div>
-        <label><span>Message</span><textarea id="o-message" name="message" placeholder="Optionnel${gift ? " — mot pour le cadeau" : ""}"></textarea></label>
+        <label><span>Message</span><textarea id="o-message" name="message" placeholder="Optionnel${gift ? " — mot pour le cadeau" : ""}">${up ? `Complément de la commande ${esc(up.ref)}, à expédier avec elle.` : ""}</textarea></label>
+        <label class="check"><input type="checkbox" id="o-cgv" required> J'accepte les <a class="link" href="#/cgv" target="_blank">conditions générales de vente</a></label>
         <button class="btn btn-block">Valider la commande</button>
+        <div class="reassure"><span>Paiement sécurisé</span><span>Retours ${S().returnDays || 30} jours</span><span>Support : ${esc(S().contactEmail || "")}</span></div>
       </form>
     </div>`, 560);
     $("#orderForm").addEventListener("submit", async (e) => {
       e.preventDefault();
-      const btn = $("button", e.target); btn.disabled = true; btn.textContent = "Envoi…";
+      const btn = $("button.btn-block", e.target); btn.disabled = true; btn.textContent = "Envoi…";
       const customer = Object.fromEntries(new FormData(e.target));
       const tt = totals();
       const order = {
         ref: "SKX-" + Date.now().toString(36).toUpperCase(),
         date: new Date().toISOString(),
         customer,
-        items: cart.map((l) => { const p = productById(l.id); const d = designById(l.design); return { id: p.id, name: p.name, size: l.size, color: l.color || "", design: d && d.id !== "none" ? d.name : "", qty: l.qty, price: lineUnit(l) }; }),
-        promoCode: promo ? normCode(promo.code) : "", giftWrap: gift,
+        items: cart.map((l) => { const p = productById(l.id); const d = designById(l.design); return { id: p.id, name: p.name, size: l.size, color: l.color || "", design: d && d.id !== "none" ? d.name : "", number: l.number || "", flocName: l.name || "", qty: l.qty, price: lineUnit(l) }; }),
+        promoCode: promo ? normCode(promo.code) : "", giftWrap: gift, upsellOf: up ? up.ref : "",
         ...tt
       };
-      let sent = false;
-      if (S().orderEndpoint) {
-        try {
-          const r = await fetch(S().orderEndpoint, { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" }, body: JSON.stringify({ ...order, _subject: `Nouvelle commande ${order.ref}`, email: customer.email }) });
-          sent = r.ok;
-        } catch { sent = false; }
-      }
+      const sent = await sendToTeam({ ...order, email: customer.email }, `Nouvelle commande ${order.ref}`);
       const orders = store.get("skx_orders", []); orders.unshift(order); store.set("skx_orders", orders);
-      cart = []; promo = null; gift = false; store.del("skx_promo"); saveCart();
+      cart = []; promo = null; gift = false; store.del("skx_promo"); session.del("skx_upsell"); saveCart();
       orderDone(order, sent);
     });
   }
   function orderText(o) {
     const c = o.customer;
-    return `Commande ${o.ref}\n\n` + o.items.map((i) => `- ${i.name} (${i.size}${i.color ? ", " + i.color : ""}${i.design ? ", dessin " + i.design : ""}) x${i.qty} : ${money(i.price * i.qty)}`).join("\n") +
+    return `Commande ${o.ref}${o.upsellOf ? " (complément de " + o.upsellOf + ")" : ""}\n\n` + o.items.map((i) => `- ${i.name} (${[i.size, i.color, i.design ? "dessin " + i.design : "", i.number ? "n°" + i.number : "", i.flocName ? "prénom " + i.flocName : ""].filter(Boolean).join(", ")}) x${i.qty} : ${money(i.price * i.qty)}`).join("\n") +
       `\n\nSous-total : ${money(o.sub)}` + (o.discount ? `\n${o.discountLabel} : -${money(o.discount)}` : "") + (o.gift ? `\nEmballage cadeau : ${money(o.gift)}` : "") +
       `\nLivraison : ${o.ship ? money(o.ship) : "Offerte"}\nTOTAL : ${money(o.total)}\n\n` +
       `${c.prenom} ${c.nom}\n${c.adresse}\n${c.cp} ${c.ville}\n${c.email} ${c.tel || ""}\n${c.message ? "\nMessage : " + c.message : ""}`;
@@ -568,17 +745,46 @@
   function orderDone(o, sent) {
     const s = S();
     const mailto = s.contactEmail ? `mailto:${s.contactEmail}?subject=${encodeURIComponent("Commande " + o.ref)}&body=${encodeURIComponent(orderText(o))}` : "";
+    const recos = recommend(o.items.map((i) => i.id), 3);
+    if (!o.upsellOf) session.set("skx_upsell", { ref: o.ref, until: Date.now() + 2 * 3600e3 });
     openModal(`<div class="modal-pad" style="text-align:center;display:grid;gap:12px">
       <span class="label">Commande ${esc(o.ref)}</span>
-      <h2>Merci ${esc(o.customer.prenom)}.</h2>
+      <h2>Merci pour ta commande, ${esc(o.customer.prenom)}.</h2>
       <p class="muted" style="margin:0">Ta commande de <span class="price" style="color:var(--text)">${money(o.total)}</span> est enregistrée.</p>
       ${sent ? `<p style="margin:0">Elle a été transmise à l'équipe SKX.</p>` : mailto ? `<p class="muted" style="margin:0">Envoie-la à SKX avec le bouton ci-dessous pour qu'elle soit traitée.</p>` : ""}
       <div style="display:grid;gap:8px;margin-top:10px">
         ${s.paymentLink ? `<a class="btn" href="${esc(s.paymentLink)}" target="_blank" rel="noopener">Payer ${money(o.total)}</a>` : ""}
         ${!sent && mailto ? `<a class="btn ${s.paymentLink ? "btn-ghost" : ""}" href="${esc(mailto)}">Envoyer ma commande par email</a>` : ""}
-        <button class="btn btn-ghost" data-close>Continuer mes achats</button>
       </div>
-    </div>`, 480);
+      ${!o.upsellOf && recos.length ? `<div class="opt" style="text-align:left;margin-top:10px"><span class="label">Avant expédition, ajoute un article complémentaire à −10 %</span><div class="minis">${recos.map(miniCard).join("")}</div></div>` : ""}
+      <button class="btn btn-ghost" data-close>Continuer mes achats</button>
+    </div>`, 520);
+  }
+
+  /* ---------- Code de bienvenue (pop-up) ---------- */
+  function welcomePopup(force) {
+    const w = S().welcome;
+    if (!w || !w.enabled || !w.code) return;
+    if (!force && (store.get("skx_welcome_seen", false) || /^#\/(equipe|admin)/.test(location.hash) || $("#entry") || $("#modal").classList.contains("open"))) return;
+    store.set("skx_welcome_seen", true);
+    const box = openModal(`<div class="welcome">
+      <div class="welcome-scene"></div>
+      <div class="modal-pad" style="display:grid;gap:12px;position:relative">
+        <span class="label">Bienvenue chez SKX</span>
+        <h2>−${w.percent} % sur ta première commande</h2>
+        <p class="muted" style="margin:0">Reçois ton code de bienvenue et sois le premier informé des nouveaux drops. Accès prioritaire et codes privés.</p>
+        <form class="form" id="welcomeForm"><div style="display:flex;gap:8px"><input id="welcomeEmail" type="email" required placeholder="ton@email.fr" style="flex:1"><button class="btn">Recevoir</button></div></form>
+        <button class="rm" data-close style="justify-self:start">Non merci</button>
+      </div></div>`, 520);
+    window.SKXWeather.mountScene($(".welcome-scene", box), "premiere", .5);
+    $("#welcomeForm", box).addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = $("#welcomeEmail").value;
+      const list = store.get("skx_newsletter", []); list.push(email); store.set("skx_newsletter", list);
+      await sendToTeam({ type: "newsletter", email }, "Inscription newsletter");
+      $(".modal-pad", box).innerHTML = `<span class="label">C'est fait</span><h2>Ton code : <span class="mono code-big">${esc(w.code)}</span></h2><p class="muted" style="margin:0">−${w.percent} % sur ta première commande (hors articles soldés).</p><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="useCode">Appliquer à mon panier</button><button class="btn btn-ghost" data-close>Continuer</button></div>`;
+      $("#useCode", box).addEventListener("click", () => { applyCode(w.code); closeModal(); });
+    });
   }
 
   /* ---------- Pages publiques ---------- */
@@ -602,13 +808,18 @@
     </a>`;
   };
 
+  const reassureBar = () => `<div class="reassure-bar"><div class="container">
+    <span>Livraison rapide · ${esc(S().shipDelay || "48 h")}</span><span>Paiement sécurisé</span><span>Retours faciles · ${S().returnDays || 30} jours</span><span>Logo brodé inclus</span><span>Support : ${esc(S().contactEmail || "")}</span>
+  </div></div>`;
+
   function pageHome() {
-    const s = S();
-    const featured = DATA.products.filter((p) => p.featured);
-    const f = brandFacts();
+    const s = S(), st = DATA.story || {};
+    const best = DATA.products.filter((p) => p.bestseller);
+    const news = DATA.products.filter((p) => p.isNew);
     const Z = DATA.zones;
-    const tick = [`<b>SKX</b> pensé en ${esc(s.founded || "2014")}`, ...ZONE_IDS.map((u) => `<b>${esc(Z[u].name)}</b> ${esc(Z[u].metric)}`), `<b>XS → 3XL</b> Homme, Femme, Enfants`, `<b>${num(f.avg * 100)} %</b> fibres certifiées`];
-    const slides = DATA.history.slides;
+    const tick = [`<b>SKX</b> pensé en ${esc(s.founded || "2014")}`, ...ZONE_IDS.map((u) => `<b>${esc(Z[u].name)}</b> ${esc(Z[u].metric)}`), `<b>XS → 3XL</b> Homme, Femme, Enfants`, `<b>${esc(s.slogan || "")}</b>`];
+    const custom = DATA.products.find((p) => p.customizable && p.type === "hoodie") || DATA.products.find((p) => p.customizable);
+    const revs = reviewsFor().slice(0, 3);
     app.innerHTML = `
       <section class="hero-mt">
         ${sceneDiv("home", 1)}
@@ -616,36 +827,62 @@
           <span class="label hero-alt">Alt. 0 m → 4 808 m · depuis ${esc(s.founded || "2014")}</span>
           <img class="hero-logo" src="assets/logo-skx.png" alt="${esc(s.shopName)}">
           <p class="hero-claim">${esc(s.slogan)}</p>
+          <p class="hero-sub">${esc(s.heroText || "")}</p>
           <div class="hero-cta">
-            <a class="btn" href="#/homme">Homme</a><a class="btn" href="#/femme">Femme</a><a class="btn" href="#/enfants">Enfants</a>
+            <a class="btn" href="#/nouveautes">Voir les nouveautés</a>
+            <a class="btn btn-ghost hero-ghost" href="#/homme">Homme</a><a class="btn btn-ghost hero-ghost" href="#/femme">Femme</a><a class="btn btn-ghost hero-ghost" href="#/enfants">Enfants</a>
           </div>
         </div>
       </section>
-      <div class="ticker" aria-hidden="true"><div class="ticker-track">${[...tick, ...tick].map((t) => `<span>${t}</span>`).join("")}</div></div>
+      ${reassureBar()}
       <section class="section"><div class="container">
-        <div class="section-head"><div><span class="label">L'ascension</span><h2>Cinq zones</h2><p>Du camp de base au sommet : chaque zone de la boutique est une étape de la montagne SKX.</p></div></div>
+        <div class="section-head"><div><span class="label">Ce qui part le plus</span><h2>Meilleures ventes</h2></div><a class="btn btn-ghost btn-sm" href="#/meilleures-ventes">Tout voir</a></div>
+        ${grid((best.length ? best : DATA.products).slice(0, 4))}
+      </div></section>
+      ${news.length ? `<section class="section" style="padding-top:0"><div class="container">
+        <div class="section-head"><div><span class="label">Nouveautés</span><h2>Derniers drops</h2></div><a class="btn btn-ghost btn-sm" href="#/nouveautes">Voir les nouveautés</a></div>
+        ${grid(news.slice(0, 4))}
+      </div></section>` : ""}
+      <section class="section" style="padding-top:0"><div class="container">
+        <div class="section-head"><div><span class="label">Collections</span><h2>Cinq zones</h2><p>Du camp de base au sommet : chaque collection est une étape de la montagne SKX.</p></div></div>
         <div class="zones">${ZONE_IDS.map((u, i) => zoneCard(u, i === 0)).join("")}</div>
       </div></section>
-      <section class="section" style="padding-top:0"><div class="container">
-        <div class="section-head"><div><h2>Sélection</h2><p>Les pièces phares de la saison.</p></div><a class="btn btn-ghost btn-sm" href="#/boutique">Toute la boutique</a></div>
-        ${grid((featured.length ? featured : DATA.products).slice(0, 8))}
-      </div></section>
-      ${slides.length ? `<section class="section" style="padding-top:0"><div class="container">
-        <div class="story-teaser">
-          <div style="display:grid;gap:14px;align-content:start"><span class="label">Histoire</span><h2 class="teaser-title">${esc(slides[0].year)} — ${esc(slides[0].title)}</h2><p class="muted" style="margin:0;max-width:52ch">${esc(slides[0].text)}</p>
-            <div><a class="btn btn-ghost btn-sm" href="#/histoire">Lire l'histoire</a></div></div>
-          <ol class="mini-timeline">${slides.map((sl) => `<li><span class="mono">${esc(sl.year)}</span><span>${esc(sl.title)}</span></li>`).join("")}</ol>
-        </div>
+      ${(DATA.packs || []).length ? `<section class="section" style="padding-top:0"><div class="container">
+        <div class="section-head"><div><span class="label">Packs</span><h2>La tenue complète</h2><p>Prends le pack, la remise s'applique toute seule dans le panier.</p></div></div>
+        <div class="packs">${DATA.packs.map(packCard).join("")}</div>
       </div></section>` : ""}
+      <div class="ticker" aria-hidden="true"><div class="ticker-track">${[...tick, ...tick].map((t) => `<span>${t}</span>`).join("")}</div></div>
+      <section class="section"><div class="container split">
+        <div style="display:grid;gap:16px;align-content:start"><span class="label">Notre histoire</span><h2 class="teaser-title">${esc(st.title || "")}</h2><p class="muted" style="margin:0;max-width:56ch">${esc(st.history || "")}</p>
+          <div><a class="btn btn-ghost btn-sm" href="#/histoire">Découvrir notre histoire</a></div></div>
+        <div class="team-strip">${DATA.people.slice(0, 3).map((m) => `<a href="#/lequipe" class="team-mini"><span class="team-av">${m.photo ? `<img src="${esc(m.photo)}" alt="">` : avatarSVG(m)}</span><b>${esc(m.name)}</b><span class="label">${esc(m.title)}</span></a>`).join("")}
+          <a class="link label" href="#/lequipe" style="grid-column:1/-1">Rencontrer l'équipe →</a></div>
+      </div></section>
+      ${custom ? `<section class="section" style="padding-top:0"><div class="container split perso-block">
+        <div class="perso-prev">${productSVG(custom, { color: "#18191b", design: "gothique" })}${TO().enabled ? backSVG(custom, "#18191b", "14", "SKX") : ""}</div>
+        <div style="display:grid;gap:16px;align-content:center"><span class="label">Personnalisation</span><h2 class="teaser-title">Ton maillot, à ta façon.</h2>
+          <p class="muted" style="margin:0">Chaque maillot est pensé avec précision. Le logo est brodé en bas à gauche pour une finition durable et élégante. Selon le modèle, il est aussi présent dans le col ou sur l'étiquette.</p>
+          <ul class="benefits">${(DATA.designs || []).filter((d) => d.enabled && +d.price).slice(0, 1).map((d) => `<li>Dessin au choix · dès +${money(d.price)}</li>`).join("")}${TO().enabled ? `<li>Ajoute ton numéro · +${money(TO().numberPrice)}</li><li>Ajoute ton prénom · +${money(TO().namePrice)}</li><li>Pack personnalisation complète · ${money(TO().packPrice)}</li>` : ""}</ul>
+          <div><button class="btn" data-product="${esc(custom.id)}">Personnaliser mon maillot</button></div></div>
+      </div></section>` : ""}
+      <section class="section" style="padding-top:0"><div class="container">
+        <div class="section-head"><div><span class="label">Avis clients</span><h2>Ils portent déjà nos pièces</h2></div><button class="btn btn-ghost btn-sm" data-review="">Donner mon avis</button></div>
+        ${revs.length ? `<div class="reviews">${revs.map(reviewHTML).join("")}</div>` : `<div class="empty">Les premiers avis arrivent. Tu as une pièce SKX ? Raconte-nous.</div>`}
+      </div></section>
       ${seen().length >= 2 ? `<section class="section" style="padding-top:0"><div class="container">
         <div class="section-head"><div><h2>Vus récemment</h2><p>Reprends là où tu t'es arrêté.</p></div></div>
         ${grid(seen().slice(0, 4).map(productById))}
       </div></section>` : ""}
+      <section class="section" style="padding-top:0"><div class="container split">
+        <div style="display:grid;gap:16px;align-content:start"><span class="label">Besoin d'aide ?</span><h2 class="teaser-title">Tailles, livraison, retours : tout est dans le guide.</h2>
+          <div style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn btn-ghost btn-sm" href="#/guide">Consulter le guide</a><a class="btn btn-ghost btn-sm" href="#/contact">Nous contacter</a></div></div>
+        <div>${faqHTML(DATA.faq.slice(0, 5))}</div>
+      </div></section>
       <section class="section" style="padding-top:0"><div class="container perks">
-        <div class="perk"><b>Personnalise</b><span>coloris et dessin au choix</span></div>
+        <div class="perk"><b>Personnalise</b><span>coloris, dessin, numéro, prénom</span></div>
         <div class="perk"><b>Du XS au 3XL</b><span>Homme, Femme, Enfants</span></div>
         <div class="perk"><b>Livraison offerte</b><span>dès ${money(s.freeShippingFrom)} d'achat</span></div>
-        <div class="perk"><b>Retours 30 jours</b><span><a class="link" href="#/guide">voir le guide</a></span></div>
+        <div class="perk"><b>Retours ${s.returnDays || 30} jours</b><span><a class="link" href="#/guide">voir le guide</a></span></div>
       </div></section>`;
     mountScenes();
   }
@@ -673,55 +910,145 @@
     shopView($("#zoneShop"), { zone: id });
   }
 
-  const shopState = { g: "all", u: "all", size: "", q: "", sort: "default" };
-  function pageShop(gender) {
-    if (gender) shopState.g = gender;
-    const title = gender ? GENDERS[gender] : "Boutique";
+  /* ---------- Boutique ---------- */
+  const SECTIONS = [["all", "Tout"], ["new", "Nouveautés"], ["best", "Meilleures ventes"], ["promo", "Promotions"], ["hauts", "Hauts"], ["bas", "Bas"], ["acc", "Accessoires"], ["limited", "Éditions limitées"], ["packs", "Packs"]];
+  const inSection = (p, sec) => ({
+    all: true, new: p.isNew, best: p.bestseller, promo: !!priceInfo(p).was, hauts: ["tshirt", "hoodie", "veste"].includes(p.type),
+    bas: p.type === "pantalon", acc: ["casquette", "bonnet"].includes(p.type) || p.zone === "accessoires", limited: p.zone === "premiere"
+  })[sec];
+  const shopState = { sec: "all", g: "all", u: "all", size: "", color: "", max: 0, stock: false, q: "", sort: "default" };
+  function pageShop(gender, sec) {
+    shopState.g = gender || "all";
+    shopState.sec = sec || "all";
+    const title = gender ? GENDERS[gender] : sec ? SECTIONS.find((x) => x[0] === sec)?.[1] : "Boutique";
     app.innerHTML = `<section class="section"><div class="container">
-      <div class="section-head"><div><h2>${esc(title)}</h2><p>Du XS au 3XL, cinq zones.</p></div></div>
+      <div class="section-head"><div><h2>${esc(title)}</h2><p>Du XS au 3XL, cinq collections.</p></div></div>
       <div id="shop"></div>
     </div></section>`;
     shopView($("#shop"), {});
   }
   function shopView(el, fixed) {
-    const st = fixed.zone ? { g: shopState.g, u: fixed.zone, size: shopState.size, q: "", sort: shopState.sort } : shopState;
-    el.innerHTML = `<div class="toolbar">
+    const st = fixed.zone ? Object.assign({}, shopState, { u: fixed.zone, sec: "all", q: "" }) : shopState;
+    const colorNames = [...new Set(DATA.products.flatMap((p) => (p.colors || []).map((c) => c.name)))].filter((n) => n !== "Unique").sort((a, b) => a.localeCompare(b));
+    const colorHex = (n) => DATA.products.flatMap((p) => p.colors || []).find((c) => c.name === n)?.hex || "#888";
+    const maxPrice = Math.ceil(Math.max(...DATA.products.map((p) => priceInfo(p).now), 10) / 10) * 10;
+    if (!st.max) st.max = maxPrice;
+    el.innerHTML = `${fixed.zone ? "" : `<div class="sections">${SECTIONS.map(([k, v]) => `<button class="sec" data-sec="${k}">${v}</button>`).join("")}</div>`}
+      <div class="toolbar">
         <div class="seg" role="group" aria-label="Genre">${[["all", "Tous"], ["homme", "Homme"], ["femme", "Femme"], ["enfant", "Enfants"]].map(([k, v]) => `<button class="chip" data-g="${k}">${v}</button>`).join("")}</div>
-        ${fixed.zone ? "" : `<div class="seg" role="group" aria-label="Zone"><button class="chip" data-u="all">Toutes zones</button>${ZONE_IDS.map((u) => `<button class="chip" data-u="${u}"><span class="sw sw-${u}"></span>${esc(DATA.zones[u].name)}</button>`).join("")}</div>`}
+        ${fixed.zone ? "" : `<div class="seg" role="group" aria-label="Collection"><button class="chip" data-u="all">Toutes collections</button>${ZONE_IDS.map((u) => `<button class="chip" data-u="${u}"><span class="sw sw-${u}"></span>${esc(DATA.zones[u].name)}</button>`).join("")}</div>`}
       </div>
       <div class="toolbar">
         <div class="seg" role="group" aria-label="Taille"><button class="chip" data-s="">Toutes tailles</button>${SIZES.map((x) => `<button class="chip" data-s="${x}">${x}</button>`).join("")}</div>
+      </div>
+      <div class="toolbar">
+        <select id="shopColor" aria-label="Couleur"><option value="">Toutes couleurs</option>${colorNames.map((n) => `<option value="${esc(n)}">${esc(n)}</option>`).join("")}</select>
+        <label class="price-range"><span class="label">Prix max</span><input type="range" id="shopMax" min="10" max="${maxPrice}" step="5" value="${Math.min(st.max, maxPrice)}"><b class="mono" id="shopMaxVal"></b></label>
+        <label class="check"><input type="checkbox" id="shopStock" ${st.stock ? "checked" : ""}> En stock</label>
         <span class="grow"></span>
         ${fixed.zone ? "" : `<input type="search" id="shopQ" placeholder="Rechercher" value="${esc(st.q)}" aria-label="Rechercher">`}
-        <select id="shopSort" aria-label="Trier"><option value="default">Sélection</option><option value="asc">Prix croissant</option><option value="desc">Prix décroissant</option><option value="name">Nom</option></select>
+        <select id="shopSort" aria-label="Trier"><option value="default">Pertinence</option><option value="best">Meilleures ventes</option><option value="new">Nouveautés</option><option value="asc">Prix croissant</option><option value="desc">Prix décroissant</option><option value="name">Nom</option></select>
       </div>
       <div class="shop-grid"></div>`;
     $("#shopSort", el).value = st.sort;
+    $("#shopColor", el).value = st.color;
     const render = () => {
+      $$("[data-sec]", el).forEach((c) => c.classList.toggle("active", c.dataset.sec === st.sec));
       $$("[data-g]", el).forEach((c) => c.classList.toggle("active", c.dataset.g === st.g));
       $$("[data-u]", el).forEach((c) => c.classList.toggle("active", c.dataset.u === st.u));
       $$("[data-s]", el).forEach((c) => c.classList.toggle("active", c.dataset.s === st.size));
-      const q = st.q.trim().toLowerCase();
-      const list = DATA.products.filter((p) => (st.u === "all" || p.zone === st.u) &&
+      $("#shopMaxVal", el).textContent = money(st.max);
+      if (st.sec === "packs") { $(".shop-grid", el).innerHTML = (DATA.packs || []).length ? `<div class="packs">${DATA.packs.map(packCard).join("")}</div>` : `<div class="empty">Aucun pack pour le moment.</div>`; return; }
+      const q = (st.q || "").trim().toLowerCase();
+      const list = DATA.products.filter((p) => inSection(p, st.sec) && (st.u === "all" || p.zone === st.u) &&
         (st.g === "all" || p.gender === st.g || (p.gender === "mixte" && st.g !== "enfant")) &&
         (!st.size || (p.sizes || []).includes(st.size) || (p.sizes || []).includes("Unique")) &&
+        (!st.color || (p.colors || []).some((c) => c.name === st.color)) &&
+        priceInfo(p).now <= st.max && (!st.stock || (+p.stock || 0) > 0) &&
         (!q || (p.name + " " + p.description + " " + (TYPES[p.type] || "")).toLowerCase().includes(q)));
-      if (st.sort === "asc") list.sort((a, b) => a.price - b.price);
-      if (st.sort === "desc") list.sort((a, b) => b.price - a.price);
+      if (st.sort === "best") list.sort((a, b) => (b.bestseller ? 1 : 0) - (a.bestseller ? 1 : 0));
+      if (st.sort === "new") list.sort((a, b) => (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0));
+      if (st.sort === "asc") list.sort((a, b) => priceInfo(a).now - priceInfo(b).now);
+      if (st.sort === "desc") list.sort((a, b) => priceInfo(b).now - priceInfo(a).now);
       if (st.sort === "name") list.sort((a, b) => a.name.localeCompare(b.name));
-      $(".shop-grid", el).innerHTML = grid(list);
+      $(".shop-grid", el).innerHTML = `<p class="label" style="margin:0 0 16px">${list.length} pièce${list.length > 1 ? "s" : ""}</p>` + grid(list);
     };
+    const sync = () => { if (!fixed.zone) Object.assign(shopState, st); else Object.assign(shopState, { g: st.g, size: st.size, color: st.color, max: st.max, stock: st.stock, sort: st.sort }); };
     el.addEventListener("click", (e) => {
-      const c = e.target.closest(".chip"); if (!c) return;
+      const sc = e.target.closest("[data-sec]"); if (sc) { st.sec = sc.dataset.sec; sync(); render(); return; }
+      const c = e.target.closest(".chip"); if (!c || c.dataset.product) return;
       if (c.dataset.g) st.g = c.dataset.g;
       if (c.dataset.u) st.u = c.dataset.u;
       if (c.dataset.s !== undefined) st.size = c.dataset.s;
-      if (!fixed.zone) Object.assign(shopState, st); else { shopState.g = st.g; shopState.size = st.size; }
-      render();
+      sync(); render();
     });
-    $("#shopQ", el)?.addEventListener("input", (e) => { st.q = e.target.value; render(); });
-    $("#shopSort", el).addEventListener("change", (e) => { st.sort = e.target.value; shopState.sort = st.sort; render(); });
+    $("#shopQ", el)?.addEventListener("input", (e) => { st.q = e.target.value; sync(); render(); });
+    $("#shopSort", el).addEventListener("change", (e) => { st.sort = e.target.value; sync(); render(); });
+    $("#shopColor", el).addEventListener("change", (e) => { st.color = e.target.value; sync(); render(); });
+    $("#shopMax", el).addEventListener("input", (e) => { st.max = +e.target.value; sync(); render(); });
+    $("#shopStock", el).addEventListener("change", (e) => { st.stock = e.target.checked; sync(); render(); });
     render();
+  }
+
+  function pageWish() {
+    const list = wish.map(productById).filter(Boolean);
+    app.innerHTML = `<section class="section"><div class="container">
+      <div class="section-head"><div><span class="label">Sur cet appareil</span><h2>Ma liste d'envies</h2><p>Garde tes pièces préférées sous la main.</p></div></div>
+      ${list.length ? grid(list) : `<div class="empty">Ta liste est vide. Touche le cœur sur une pièce pour l'ajouter.<br><br><a class="btn btn-sm" href="#/boutique">Voir la boutique</a></div>`}
+    </div></section>`;
+  }
+
+  function pageContact() {
+    const s = S();
+    app.innerHTML = `<section class="section"><div class="container split">
+      <div style="display:grid;gap:16px;align-content:start"><span class="label">Contact</span><h2 class="teaser-title">Une question, une commande, une idée ?</h2>
+        <p class="muted" style="margin:0">L'équipe SKX te répond rapidement.</p>
+        <p style="margin:0"><a class="link" href="mailto:${esc(s.contactEmail)}">${esc(s.contactEmail)}</a></p>
+        <div>${faqHTML(DATA.faq.slice(0, 4))}</div></div>
+      <form class="form box" id="contactForm">
+        <div class="row"><label><span>Nom</span><input id="ct-name" name="name" required></label><label><span>Email</span><input id="ct-email" type="email" name="email" required></label></div>
+        <label><span>Sujet</span><select id="ct-subject" name="subject"><option>Commande</option><option>Taille / produit</option><option>Personnalisation</option><option>Retour / échange</option><option>Partenariat</option><option>Autre</option></select></label>
+        <label><span>Message</span><textarea id="ct-msg" name="message" required style="min-height:140px"></textarea></label>
+        <button class="btn">Envoyer</button>
+      </form>
+    </div></section>`;
+    $("#contactForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const f = Object.fromEntries(new FormData(e.target));
+      const ok = await sendToTeam({ type: "contact", ...f }, `Contact : ${f.subject}`);
+      e.target.innerHTML = ok ? `<h3>Message envoyé.</h3><p class="muted">Merci ${esc(f.name)}, on te répond par email.</p>` : `<h3>Dernière étape</h3><p class="muted">Envoie ton message avec ta messagerie :</p><a class="btn" href="${esc(mailtoTeam(`${f.subject} — ${f.name}`, f.message + "\n\n" + f.name + " · " + f.email))}">Envoyer par email</a>`;
+    });
+  }
+
+  function pageLegal(kind) {
+    const s = S(), L = s.legal || {};
+    const v = (x, ph) => x ? esc(x) : `<mark>[${ph} à compléter]</mark>`;
+    const pages = {
+      mentions: ["Mentions légales", `
+        <h2>Éditeur du site</h2><p>${v(L.company, "Raison sociale")} — ${v(L.form, "Forme juridique et capital")}<br>${v(L.address, "Adresse du siège")}<br>SIRET : ${v(L.siret, "SIRET")}<br>Directeur de la publication : ${v(L.director, "Nom")}<br>Contact : ${esc(s.contactEmail)}</p>
+        <h2>Hébergement</h2><p>${v(L.host, "Hébergeur")}</p>
+        <h2>Propriété intellectuelle</h2><p>Le nom SKX, le logo, les visuels et les textes du site sont protégés. Toute reproduction sans autorisation est interdite.</p>`],
+      cgv: ["Conditions générales de vente", `
+        <h2>1. Objet</h2><p>Les présentes conditions régissent les ventes de vêtements et accessoires SKX conclues sur ce site entre ${v(L.company, "Raison sociale")} et tout client consommateur.</p>
+        <h2>2. Prix</h2><p>Les prix sont indiqués en euros, toutes taxes comprises, hors frais de livraison. Les frais de livraison (${money(s.shippingPrice)}, offerts dès ${money(s.freeShippingFrom)}) sont indiqués avant la validation de la commande.</p>
+        <h2>3. Commande et paiement</h2><p>La commande est validée après acceptation des présentes conditions et paiement. Les moyens de paiement acceptés sont : ${esc(s.paymentMethods || "carte bancaire")}.</p>
+        <h2>4. Promotions et codes</h2><p>Les codes promo ne sont pas cumulables sauf mention contraire. Les offres sont valables selon les dates indiquées et dans la limite des stocks disponibles.</p>
+        <h2>5. Livraison</h2><p>Les commandes sont expédiées sous ${esc(s.shipDelay || "48 h")}. Un numéro de suivi est envoyé par e-mail dès l'expédition.</p>
+        <h2>6. Droit de rétractation et retours</h2><p>Le client dispose de 14 jours à compter de la réception pour exercer son droit de rétractation. SKX prolonge ce délai à ${s.returnDays || 30} jours. Les articles doivent être non portés, non lavés et avec leurs étiquettes. Les articles personnalisés (dessin, numéro, prénom) sont exclus du droit de rétractation, sauf défaut.</p>
+        <h2>7. Garanties</h2><p>Les produits bénéficient de la garantie légale de conformité et de la garantie des vices cachés.</p>
+        <h2>8. Médiation</h2><p>En cas de litige, le client peut recourir gratuitement au médiateur de la consommation : ${v(L.mediator, "Nom et coordonnées du médiateur")}.</p>`],
+      confidentialite: ["Politique de confidentialité", `
+        <h2>Données collectées</h2><p>Lors d'une commande, d'un message ou d'une inscription, nous collectons : nom, prénom, adresse, e-mail et téléphone. Ces données servent uniquement à traiter ta commande et à te répondre.</p>
+        <h2>Stockage sur ton appareil</h2><p>Le site enregistre sur ton navigateur ton panier, ta liste d'envies, tes préférences radio et les pièces consultées. Rien de cela n'est envoyé ailleurs.</p>
+        <h2>Tes droits</h2><p>Tu peux demander l'accès, la rectification ou la suppression de tes données à ${esc(s.contactEmail)}.</p>
+        <h2>Responsable du traitement</h2><p>${v(L.company, "Raison sociale")}, ${v(L.address, "Adresse")}.</p>`]
+    };
+    const [title, body] = pages[kind];
+    app.innerHTML = `<section class="section"><div class="container prose">
+      <div class="section-head" style="margin-bottom:0"><div><span class="label">Informations légales</span><h2 style="margin:0">${title}</h2></div></div>
+      ${/<mark>/.test(body) ? `<div class="notice">Les champs surlignés sont à compléter dans l'espace équipe (Réglages → Informations légales). Fais relire ces textes par un professionnel avant l'ouverture.</div>` : ""}
+      ${body}
+    </div></section>`;
   }
 
   /* Histoire en slides */
@@ -752,6 +1079,27 @@
         </div>
       </div>
     </section>`;
+    const st = DATA.story || {};
+    app.insertAdjacentHTML("afterbegin", `<section class="section story-intro"><div class="container">
+      <span class="label">Notre histoire</span><h1 class="story-title">${esc(st.title || "")}</h1>
+      <p class="story-lead">${esc(st.history || "")}</p></div></section>`);
+    app.insertAdjacentHTML("beforeend", `
+      <section class="section"><div class="container story-grid">
+        <div><span class="label">Nos valeurs</span><p class="story-p">${esc(st.values || "")}</p></div>
+        <div><span class="label">Notre mission</span><p class="story-p">${esc(st.mission || "")}</p></div>
+      </div></section>
+      <section class="section" style="padding-top:0"><div class="container">
+        <div class="section-head"><div><span class="label">L'équipe</span><h2>Qui porte SKX</h2><p>${esc(st.team || "")}</p></div><a class="btn btn-ghost btn-sm" href="#/lequipe">Toute l'équipe</a></div>
+        <div class="team-strip wide">${DATA.people.map((m) => `<a href="#/lequipe" class="team-mini"><span class="team-av">${m.photo ? `<img src="${esc(m.photo)}" alt="">` : avatarSVG(m)}</span><b>${esc(m.name)}</b><span class="label">${esc(m.title)}</span></a>`).join("")}</div>
+      </div></section>
+      <section class="section" style="padding-top:0"><div class="container story-grid">
+        <div><span class="label">Qualité</span><p class="story-p">${esc(st.quality || "")}</p></div>
+        <div><span class="label">Nos engagements</span><ul class="benefits">${(st.commitments || []).map((c) => `<li>${esc(c)}</li>`).join("")}</ul></div>
+      </div></section>
+      <section class="section" style="padding-top:0"><div class="container">
+        <div class="section-head"><div><span class="label">Besoin d'aide ?</span><h2>Infos pratiques</h2></div></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">${[["#/guide", "Guide des tailles"], ["#/guide", "Livraison et retours"], ["#/guide", "Entretien des produits"], ["#/guide", "FAQ"], ["#/contact", "Contact"]].map(([h, t]) => `<a class="btn btn-ghost btn-sm" href="${h}">${t}</a>`).join("")}</div>
+      </div></section>`);
     mountScenes();
     const show = (i) => {
       slideIdx = (i + slides.length) % slides.length;
@@ -862,35 +1210,41 @@
     const s = S(), pr = P();
     app.innerHTML = `<section class="section"><div class="container prose">
       <div class="section-head" style="margin-bottom:0"><div><span class="label">Guide</span><h2 style="margin:0">Livraison, tailles et plus</h2></div></div>
-      <nav class="guide-toc">${[["livraison", "Livraison"], ["retours", "Retours"], ["tailles", "Tailles"], ["perso", "Personnalisation"], ["promos", "Soldes et codes"], ["marquage", "Marquage SKX"], ["entretien", "Entretien"]].map(([k, v]) => `<a class="chip" href="#g-${k}" data-anchor="g-${k}">${v}</a>`).join("")}</nav>
+      <nav class="guide-toc">${[["livraison", "Livraison"], ["retours", "Retours"], ["tailles", "Tailles"], ["perso", "Personnalisation"], ["promos", "Soldes et codes"], ["marquage", "Marquage SKX"], ["entretien", "Entretien"], ["faq", "FAQ"]].map(([k, v]) => `<a class="chip" href="#g-${k}" data-anchor="g-${k}">${v}</a>`).join("")}</nav>
       <h2 id="g-livraison">Livraison</h2>
-      <p>Expédition sous 48 h ouvrées. Livraison à ${money(s.shippingPrice)}, offerte dès ${money(s.freeShippingFrom)} d'achat.</p>
+      <p>Nous préparons tes commandes avec soin. Les commandes sont expédiées sous ${esc(s.shipDelay || "48 h")}. Un numéro de suivi t'est envoyé par e-mail dès l'expédition.</p>
+      <p>Livraison en France métropolitaine à ${money(s.shippingPrice)}, offerte dès ${money(s.freeShippingFrom)} d'achat.</p>
       <h2 id="g-retours">Retours</h2>
-      <p>Tu as 30 jours pour changer d'avis. Les articles doivent être neufs, non portés, avec leurs étiquettes. Les pièces personnalisées (motif ajouté) ne sont ni reprises ni échangées, sauf défaut.${s.contactEmail ? ` Écris-nous à <a class="link" href="mailto:${esc(s.contactEmail)}">${esc(s.contactEmail)}</a>.` : ""}</p>
+      <p>Tu disposes de ${s.returnDays || 30} jours après réception pour changer d'avis. Les articles doivent être non portés, non lavés et avec leurs étiquettes. Échange ou remboursement, au choix. Les pièces personnalisées (motif ajouté) ne sont ni reprises ni échangées, sauf défaut.${s.contactEmail ? ` Écris-nous à <a class="link" href="mailto:${esc(s.contactEmail)}">${esc(s.contactEmail)}</a>.` : ""}</p>
       <h2 id="g-tailles">Guide des tailles</h2>
       <p>Homme, Femme et Enfants : du XS au 3XL.</p>
       <div class="table-wrap"><table class="table"><thead><tr><th>Taille</th><th class="num">Poitrine (cm)</th><th class="num">Taille (cm)</th><th class="num">Longueur (cm)</th></tr></thead><tbody>
         ${[["XS", "86–90", "72–76", 66], ["S", "90–96", "76–82", 69], ["M", "96–102", "82–88", 72], ["L", "102–108", "88–94", 74], ["XL", "108–116", "94–102", 76], ["2XL", "116–124", "102–110", 78], ["3XL", "124–132", "110–118", 80]].map((r) => `<tr><td class="mono">${r[0]}</td><td class="num">${r[1]}</td><td class="num">${r[2]}</td><td class="num">${r[3]}</td></tr>`).join("")}
       </tbody></table></div>
-      <p>Les coupes SKX sont amples. Prends ta taille habituelle pour un tombé oversize, une taille en dessous pour un tombé ajusté.</p>
+      <p>Les coupes SKX sont amples. Entre deux tailles ? Prends la taille au-dessus pour plus de confort. Le conseil de coupe de chaque pièce est indiqué sur sa fiche.</p>
       <h2 id="g-perso">Personnalisation</h2>
-      <p>Sur les pièces marquées personnalisables, choisis ton coloris et ajoute un dessin : ${(DATA.designs || []).filter((d) => d.enabled && d.id !== "none").map((d) => `${esc(d.name)} (+${money(d.price)})`).join(", ")}. L'aperçu se met à jour en direct sur la fiche produit.</p>
+      <p>Sur les pièces personnalisables, choisis ton coloris, ajoute ton numéro (+${money(TO().numberPrice)}), ton prénom (+${money(TO().namePrice)}) ou le pack complet (${money(TO().packPrice)}), et un dessin : ${(DATA.designs || []).filter((d) => d.enabled && d.id !== "none").map((d) => `${esc(d.name)} (+${money(d.price)})`).join(", ")}. L'aperçu se met à jour en direct sur la fiche produit.</p>
       <h2 id="g-promos">Soldes et codes promo</h2>
-      <p>Soldes d'hiver et d'été sur les fins de stock, jusqu'à −${pr.maxSale} %. Les codes promo s'appliquent aux articles non soldés et ne se cumulent pas avec la remise par quantité.</p>
+      <p>Soldes d'hiver et d'été sur les fins de stock, jusqu'à −${pr.maxSale} %. Les codes promo s'appliquent aux articles non soldés. Les codes promo ne sont pas cumulables sauf mention contraire : la remise la plus avantageuse est appliquée. Les offres sont valables selon les dates indiquées et dans la limite des stocks disponibles.</p>
       <h2 id="g-marquage">Marquage SKX</h2>
       <p>Chaque pièce porte le logo SKX brodé en bas à gauche, et une étiquette SKX dans le col ou sur l'étiquette intérieure.</p>
       <h2 id="g-entretien">Entretien</h2>
       <p>Lavage à 30 °C à l'envers, pas de sèche-linge pour les molletons, séchage à plat pour les mailles. Le détail est indiqué sur chaque fiche produit.</p>
+      <h2 id="g-faq">FAQ</h2>
+      ${faqHTML(DATA.faq)}
+      <h2>Contact</h2>
+      <p>Une autre question ? <a class="link" href="#/contact">Écris-nous</a> ou envoie un e-mail à <a class="link" href="mailto:${esc(s.contactEmail)}">${esc(s.contactEmail)}</a>.</p>
     </div></section>`;
     $(".guide-toc", app).addEventListener("click", (e) => { const a = e.target.closest("[data-anchor]"); if (!a) return; e.preventDefault(); document.getElementById(a.dataset.anchor)?.scrollIntoView({ behavior: "smooth" }); });
   }
 
   function pageSoldes() {
-    const list = DATA.products.filter((p) => saleFor(p));
     const sales = activeSales();
+    const last = DATA.products.filter((p) => (+p.stock || 0) > 0 && (+p.stock || 0) <= 3);
     app.innerHTML = `<section class="section"><div class="container">
-      <div class="section-head"><div><span class="label">${sales.map((x) => esc(x.name)).join(" · ") || "Soldes"}</span><h2>Soldes</h2><p>Fins de stock, jusqu'à −${P().maxSale} %. Quand c'est parti, c'est parti.</p></div></div>
-      ${grid(list)}
+      <div class="section-head"><div><span class="label">Promotions</span><h2>Soldes</h2><p>Fins de stock, jusqu'à −${P().maxSale} %. Offres valables selon les dates indiquées et dans la limite des stocks disponibles.</p></div></div>
+      ${sales.length ? sales.map((x) => { const list = DATA.products.filter((p) => (x.productIds || []).includes(p.id)); const d = Math.max(0, Math.ceil((new Date(x.end + "T23:59:59") - new Date()) / 864e5)); return `<div class="sale-group"><div class="section-head" style="margin-bottom:20px"><div><h3 class="sale-title">${esc(x.name)}</h3><p class="label">−${Math.min(+x.percent, P().maxSale)} % · se termine dans ${d} jour${d > 1 ? "s" : ""}</p></div></div>${grid(list)}</div>`; }).join("") : `<div class="empty">Pas de soldes en ce moment. Reviens bientôt.</div>`}
+      ${last.length ? `<div class="sale-group"><div class="section-head" style="margin-bottom:20px"><div><h3 class="sale-title">Dernières tailles</h3><p class="label">3 pièces ou moins</p></div></div>${grid(last)}</div>` : ""}
     </div></section>`;
   }
 
@@ -1129,7 +1483,14 @@
         </div>
         <label><span>Tailles <span class="hint">séparées par des virgules</span></span><input id="pf-sizes" name="sizes" value="${esc((p.sizes || []).join(", "))}"></label>
         <label><span>Coloris <span class="hint">Nom:#couleur, séparés par des virgules — le premier est le coloris principal</span></span><input id="pf-colors" name="colors" value="${esc((p.colors || []).map((c) => c.name + ":" + c.hex).join(", "))}" placeholder="Noir:#18191b, Sable:#c8b79a"></label>
-        <label class="check"><input type="checkbox" id="pf-custom" name="customizable" ${p.customizable ? "checked" : ""}> Personnalisable (dessins au choix)</label>
+        <div style="display:flex;gap:18px;flex-wrap:wrap">
+          <label class="check"><input type="checkbox" id="pf-custom" name="customizable" ${p.customizable ? "checked" : ""}> Personnalisable</label>
+          <label class="check"><input type="checkbox" id="pf-new" name="isNew" ${p.isNew ? "checked" : ""}> Nouveauté</label>
+          <label class="check"><input type="checkbox" id="pf-best" name="bestseller" ${p.bestseller ? "checked" : ""}> Meilleure vente</label>
+        </div>
+        <label><span>Conseil de coupe</span><input id="pf-fit" name="fitTip" value="${esc(p.fitTip || "")}" placeholder="Ce modèle taille normalement. Entre deux tailles, prends la taille au-dessus."></label>
+        <label><span>Points forts <span class="hint">un par ligne — vide = liste standard</span></span><textarea id="pf-ben" name="benefits">${esc((p.benefits || []).join("\n"))}</textarea></label>
+        <label><span>Autres photos <span class="hint">liens séparés par des virgules : porté, zoom matière, zoom logo, col, dos…</span></span><input id="pf-imgs" name="images" value="${esc((p.images || []).filter((x) => !x.startsWith("data:")).join(", "))}"></label>
         <label><span>Description</span><textarea id="pf-desc" name="description">${esc(p.description)}</textarea></label>
         <div class="row" style="align-items:start">
           <div class="form">
@@ -1151,7 +1512,10 @@
       const cols = (f.colors || "").split(",").map((x) => { const [n, h] = x.split(":").map((y) => (y || "").trim()); return /^#[0-9a-f]{6}$/i.test(h || "") ? { name: n || h, hex: h } : null; }).filter(Boolean);
       p.colors = cols.length ? cols : [{ name: "Unique", hex: p.color || "#c9c4b8" }];
       p.color = p.colors[0].hex;
-      p.customizable = !!f.customizable;
+      p.customizable = !!f.customizable; p.isNew = !!f.isNew; p.bestseller = !!f.bestseller;
+      p.fitTip = (f.fitTip || "").trim();
+      p.benefits = (f.benefits || "").split("\n").map((x) => x.trim()).filter(Boolean);
+      p.images = [...(p.images || []).filter((x) => x.startsWith("data:")), ...(f.images || "").split(",").map((x) => x.trim()).filter(Boolean)];
       p.stock = Math.max(0, parseInt(f.stock) || 0); p.description = f.description.trim(); p.featured = !!f.featured;
       if (f.image.trim()) p.image = f.image.trim(); else if (!(p.image || "").startsWith("data:")) p.image = "";
     };
@@ -1463,7 +1827,14 @@
     const H = clone(DATA.history);
     el.innerHTML = `${publishNotice()}
       <div class="notice info">Chaque bloc est une slide de la page Histoire, dans l'ordre. Le repère peut être une année ou un mot court.</div>
-      <div class="box"><label class="form"><span class="label">Introduction</span><input class="input" id="hIntro" value="${esc(H.intro)}"></label></div>
+      <div class="box"><h3>Textes de la page « Notre histoire »</h3><form class="form" id="storyForm">
+        <label><span>Titre</span><input name="title" value="${esc(DATA.story.title || "")}"></label>
+        <label><span>Histoire</span><textarea name="history">${esc(DATA.story.history || "")}</textarea></label>
+        <div class="row"><label><span>Valeurs</span><textarea name="values">${esc(DATA.story.values || "")}</textarea></label><label><span>Mission</span><textarea name="mission">${esc(DATA.story.mission || "")}</textarea></label></div>
+        <div class="row"><label><span>Équipe</span><textarea name="team">${esc(DATA.story.team || "")}</textarea></label><label><span>Qualité</span><textarea name="quality">${esc(DATA.story.quality || "")}</textarea></label></div>
+        <label><span>Engagements <span class="hint">un par ligne</span></span><textarea name="commitments">${esc((DATA.story.commitments || []).join("\n"))}</textarea></label>
+        <button class="btn btn-sm" style="justify-self:start">Enregistrer les textes</button></form></div>
+      <div class="box"><label class="form"><span class="label">Introduction des slides</span><input class="input" id="hIntro" value="${esc(H.intro)}"></label></div>
       <div id="hSlides"></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" id="hAdd">Ajouter une slide</button><button class="btn btn-sm" id="hSave">Enregistrer</button><a class="btn btn-ghost btn-sm" href="#/histoire" data-ro-ok>Voir la page</a></div>`;
     const render = () => {
@@ -1483,6 +1854,11 @@
       if (rm && confirm("Supprimer cette slide ?")) { H.slides.splice(+rm.dataset.rm, 1); render(); }
     });
     $("#hIntro").addEventListener("input", (e) => { H.intro = e.target.value; });
+    $("#storyForm").addEventListener("submit", (e) => {
+      e.preventDefault(); const f = Object.fromEntries(new FormData(e.target));
+      f.commitments = f.commitments.split("\n").map((x) => x.trim()).filter(Boolean);
+      DATA.story = f; saveDraft(); toast("Textes enregistrés."); pageTeam();
+    });
     $("#hAdd").addEventListener("click", () => { H.slides.push({ year: "", title: "", text: "", image: "" }); render(); });
     $("#hSave").addEventListener("click", () => { H.slides = H.slides.filter((x) => x.title.trim() || x.text.trim()); DATA.history = H; saveDraft(); toast("Histoire enregistrée."); pageTeam(); });
   }
@@ -1559,6 +1935,8 @@
           ${pr.codes.map((c, i) => `<tr><td class="mono">${esc(c.hint)}</td><td>${esc(c.note || "—")}</td><td class="num">−${c.percent} %</td><td>${c.expires ? new Date(c.expires).toLocaleDateString("fr-FR") : "—"}${c.expires && c.expires < t ? ` <span class="status status-Arrêté">expiré</span>` : ""}</td>
             <td><input type="checkbox" data-code-on="${i}" ${c.active ? "checked" : ""} aria-label="Actif"></td><td><div class="actions"><button class="btn btn-danger btn-sm" data-code-del="${i}">Suppr.</button></div></td></tr>`).join("") || `<tr><td colspan="6" class="muted">Aucun code.</td></tr>`}
         </tbody></table></div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:14px"><span class="label" style="align-self:center">Modèles :</span>${[["TEAM", 20, "Équipe"], ["FAMILY", 30, "Famille"], ["VIP", 40, "Lancement / très proches"], ["STOCK", 50, "Anciens stocks"], ["LASTCHANCE", 70, "Dernières pièces, déstockage final"]].map(([c, v, n]) => `<button class="chip" data-tpl="${c}" data-tpv="${v}" data-tpn="${esc(n)}">${c} · −${v} %</button>`).join("")}</div>
+        <p class="label" style="margin:8px 0 0">Conseil : −20 à −30 % standard, −40 % exceptionnel, −50 % et −70 % seulement sur anciens stocks et dernières pièces. Ajoute des chiffres ou lettres au modèle pour qu'il ne soit pas devinable.</p>
         <form class="form" id="codeForm" style="margin-top:16px">
           <div class="row3" style="grid-template-columns:1.2fr 100px 1fr 1fr">
             <label><span>Code</span><input id="cf-code" name="code" required pattern="[A-Za-z0-9_\\-]{3,20}" placeholder="FAMILLE50" style="text-transform:uppercase"></label>
@@ -1576,6 +1954,26 @@
       <div class="box"><h3>Remise par quantité</h3><p>Pousse à ajouter une pièce de plus. Ne se cumule pas avec un code promo.</p>
         <label class="check" style="margin-bottom:12px"><input type="checkbox" id="volOn" ${pr.volume.enabled ? "checked" : ""}> Activer</label>
         <div id="tiers" style="display:grid;gap:8px;max-width:420px">${pr.volume.tiers.map((x, i) => `<div style="display:flex;gap:8px;align-items:center"><span class="label">Dès</span><input class="input" type="number" min="2" value="${x.qty}" data-tier="${i}" data-tk="qty" style="width:70px" aria-label="Pièces"><span class="label">pièces</span><input class="input" type="number" min="1" max="50" value="${x.percent}" data-tier="${i}" data-tk="percent" style="width:70px" aria-label="Remise"><span class="label">%</span></div>`).join("")}</div></div>
+
+      <div class="box"><h3>Code de bienvenue</h3><p>Proposé dans une fenêtre aux nouveaux visiteurs, en échange de leur e-mail. Si une adresse Formspree est réglée, les e-mails te sont envoyés.</p>
+        <div style="display:flex;gap:12px;align-items:end;flex-wrap:wrap">
+          <label class="check"><input type="checkbox" id="wOn" ${S().welcome.enabled ? "checked" : ""}> Activer</label>
+          <label class="form"><span class="label">Code</span><input class="input" id="wCode" value="${esc(S().welcome.code)}" style="text-transform:uppercase"></label>
+          <label class="form"><span class="label">Remise %</span><input class="input" type="number" min="1" max="${pr.maxCode}" id="wPct" value="${+S().welcome.percent}" style="width:90px"></label>
+          <label class="form"><span class="label">Délai (s)</span><input class="input" type="number" min="3" id="wDelay" value="${+S().welcome.delay}" style="width:90px"></label>
+        </div></div>
+
+      <div class="box"><h3>Numéro et prénom</h3><p>Personnalisation du dos sur les hauts personnalisables.</p>
+        <div style="display:flex;gap:12px;align-items:end;flex-wrap:wrap">
+          <label class="check"><input type="checkbox" id="toOn" ${DATA.textOptions.enabled ? "checked" : ""}> Proposer</label>
+          <label class="form"><span class="label">Numéro €</span><input class="input" type="number" step="0.1" min="0" id="toNum" value="${+DATA.textOptions.numberPrice}" style="width:90px"></label>
+          <label class="form"><span class="label">Prénom €</span><input class="input" type="number" step="0.1" min="0" id="toName" value="${+DATA.textOptions.namePrice}" style="width:90px"></label>
+          <label class="form"><span class="label">Pack complet €</span><input class="input" type="number" step="0.1" min="0" id="toPack" value="${+DATA.textOptions.packPrice}" style="width:90px"></label>
+        </div></div>
+
+      <div class="box"><h3>Packs</h3><p>Quand toutes les pièces d'un pack sont dans le panier, la remise s'applique (50 % max, non cumulable).</p>
+        <div id="packList" style="display:grid;gap:12px"></div>
+        <button class="btn btn-ghost btn-sm" id="packAdd" style="margin-top:12px">Ajouter un pack</button></div>
 
       <div class="box"><h3>Emballage cadeau</h3>
         <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><label class="check"><input type="checkbox" id="giftOn" ${pr.giftWrap.enabled ? "checked" : ""}> Proposer l'emballage cadeau</label>
@@ -1601,6 +1999,25 @@
       if (role().readOnly) lockReadOnly($("#salesList"));
     };
     renderSales();
+    const packs = clone(DATA.packs || []);
+    const renderPacks = () => {
+      $("#packList").innerHTML = packs.map((pk, i) => `<div class="box" data-pk="${i}" style="background:var(--bg);margin:0">
+        <div style="display:grid;grid-template-columns:1.2fr 90px auto;gap:10px;align-items:end">
+          <label class="form"><span class="label">Nom</span><input class="input" data-pkk="name" value="${esc(pk.name)}"></label>
+          <label class="form"><span class="label">Remise %</span><input class="input" type="number" min="1" max="50" data-pkk="percent" value="${+pk.percent}"></label>
+          <button class="icon-btn" data-pkdel="${i}" aria-label="Supprimer">✕</button></div>
+        <label class="form" style="margin:10px 0"><span class="label">Description</span><input class="input" data-pkk="description" value="${esc(pk.description || "")}"></label>
+        <div class="checks">${DATA.products.map((p) => `<label><input type="checkbox" data-pkp="${esc(p.id)}" ${(pk.items || []).includes(p.id) ? "checked" : ""}> ${esc(p.name)}</label>`).join("")}</div></div>`).join("") || `<p class="muted">Aucun pack.</p>`;
+      if (role().readOnly) lockReadOnly($("#packList"));
+    };
+    renderPacks();
+    $("#packList").addEventListener("input", (e) => {
+      const b = e.target.closest("[data-pk]"); if (!b) return; const pk = packs[+b.dataset.pk];
+      if (e.target.dataset.pkk) pk[e.target.dataset.pkk] = e.target.dataset.pkk === "percent" ? Math.max(1, Math.min(+e.target.value || 0, 50)) : e.target.value;
+      if (e.target.dataset.pkp) { const id = e.target.dataset.pkp; pk.items = e.target.checked ? [...new Set([...(pk.items || []), id])] : pk.items.filter((x) => x !== id); }
+    });
+    $("#packList").addEventListener("click", (e) => { const d = e.target.closest("[data-pkdel]"); if (d && confirm("Supprimer ce pack ?")) { packs.splice(+d.dataset.pkdel, 1); renderPacks(); } });
+    $("#packAdd").addEventListener("click", () => { packs.push({ id: uid("pk"), name: "Nouveau pack", items: [], percent: 10, description: "" }); renderPacks(); });
     $$("[data-preset]", el).forEach((b) => b.addEventListener("click", () => { pr.sales.push(salePreset(b.dataset.preset)); renderSales(); }));
     $("#salesList").addEventListener("input", (e) => {
       const box = e.target.closest("[data-si]"); if (!box) return;
@@ -1629,6 +2046,10 @@
       DATA.promos = pr; saveDraft(); pageTeam();
       toast(`Code ${code} créé (−${pct} %). Note-le : il ne sera plus affiché en clair.`);
     });
+    $$("[data-tpl]", el).forEach((b) => b.addEventListener("click", () => {
+      $("#cf-code").value = b.dataset.tpl + b.dataset.tpv + "-" + Math.random().toString(36).slice(2, 6).toUpperCase();
+      $("#cf-pct").value = b.dataset.tpv; $("#cf-note").value = b.dataset.tpn;
+    }));
     el.addEventListener("change", (e) => {
       const on = e.target.closest("[data-code-on]"); if (on) pr.codes[+on.dataset.codeOn].active = on.checked;
     });
@@ -1640,6 +2061,9 @@
       pr.volume.enabled = $("#volOn").checked;
       pr.giftWrap.enabled = $("#giftOn").checked; pr.giftWrap.price = Math.max(0, +$("#giftPrice").value || 0);
       for (const x of pr.sales) if (x.start && x.end && x.end < x.start) { toast(`« ${x.name} » : la fin est avant le début.`); return; }
+      DATA.settings.welcome = { enabled: $("#wOn").checked, code: normCode($("#wCode").value), percent: Math.max(1, Math.min(+$("#wPct").value || 10, pr.maxCode)), delay: Math.max(3, +$("#wDelay").value || 12) };
+      DATA.textOptions = { enabled: $("#toOn").checked, numberPrice: Math.max(0, +$("#toNum").value || 0), namePrice: Math.max(0, +$("#toName").value || 0), packPrice: Math.max(0, +$("#toPack").value || 0) };
+      DATA.packs = packs.filter((pk) => pk.name.trim() && (pk.items || []).length >= 2);
       DATA.promos = pr; saveDraft(); toast("Promotions enregistrées."); pageTeam();
     });
   }
@@ -1680,6 +2104,42 @@
     $("#dList").addEventListener("click", (e) => { const b = e.target.closest("[data-del]"); if (b && confirm("Supprimer ce dessin ?")) { list.splice(+b.dataset.del, 1); preview(); } });
     $("#dAdd").addEventListener("click", () => { list.push({ id: uid("d"), name: "Nouveau dessin", price: 5, enabled: false, image: "" }); preview(); });
     $("#dSave").addEventListener("click", () => { DATA.designs = list; saveDraft(); toast("Dessins enregistrés."); pageTeam(); });
+  }
+
+  /* --- Avis & FAQ --- */
+  function tabReviews(el) {
+    const R = clone(DATA.reviews), F = clone(DATA.faq);
+    el.innerHTML = `${publishNotice()}
+      <div class="notice info">Les avis envoyés par les clients t'arrivent par e-mail (ou Formspree). Ajoute ici ceux que tu veux publier. N'invente pas d'avis : utilise de vrais retours de clients ou de testeurs.</div>
+      <div class="box"><h3>Avis publiés</h3><div id="revList" style="display:grid;gap:10px"></div>
+        <button class="btn btn-ghost btn-sm" id="revAdd" style="margin-top:12px">Ajouter un avis</button></div>
+      <div class="box"><h3>FAQ</h3><p>Affichée sur l'accueil, les fiches produits, le guide et la page contact.</p><div id="faqList" style="display:grid;gap:10px"></div>
+        <button class="btn btn-ghost btn-sm" id="faqAdd" style="margin-top:12px">Ajouter une question</button></div>
+      <button class="btn" id="rfSave">Enregistrer</button>`;
+    const renderR = () => {
+      $("#revList").innerHTML = R.map((r, i) => `<div class="box" data-ri="${i}" style="background:var(--bg);margin:0">
+        <div style="display:grid;grid-template-columns:1fr 1.4fr 90px 130px auto;gap:10px;align-items:end">
+          <label class="form"><span class="label">Prénom</span><input class="input" data-rk="name" value="${esc(r.name)}"></label>
+          <label class="form"><span class="label">Pièce</span><select class="input" data-rk="productId"><option value="">Marque</option>${DATA.products.map((p) => `<option value="${esc(p.id)}" ${p.id === r.productId ? "selected" : ""}>${esc(p.name)}</option>`).join("")}</select></label>
+          <label class="form"><span class="label">Note</span><input class="input" type="number" min="1" max="5" data-rk="rating" value="${+r.rating || 5}"></label>
+          <label class="check"><input type="checkbox" data-rk="verified" ${r.verified ? "checked" : ""}> Achat vérifié</label>
+          <button class="icon-btn" data-rdel="${i}" aria-label="Supprimer">✕</button></div>
+        <label class="form" style="margin-top:10px"><span class="label">Avis</span><textarea class="input" data-rk="text">${esc(r.text)}</textarea></label></div>`).join("") || `<p class="muted">Aucun avis publié.</p>`;
+      if (role().readOnly) lockReadOnly($("#revList"));
+    };
+    const renderF = () => {
+      $("#faqList").innerHTML = F.map((f, i) => `<div data-fi="${i}" style="display:grid;grid-template-columns:1fr 2fr auto;gap:8px;align-items:start">
+        <input class="input" data-fk="q" value="${esc(f.q)}" aria-label="Question"><textarea class="input" data-fk="a" style="min-height:44px" aria-label="Réponse">${esc(f.a)}</textarea><button class="icon-btn" data-fdel="${i}" aria-label="Supprimer">✕</button></div>`).join("");
+      if (role().readOnly) lockReadOnly($("#faqList"));
+    };
+    renderR(); renderF();
+    $("#revList").addEventListener("input", (e) => { const b = e.target.closest("[data-ri]"), k = e.target.dataset.rk; if (!b || !k) return; R[+b.dataset.ri][k] = k === "verified" ? e.target.checked : k === "rating" ? Math.max(1, Math.min(5, +e.target.value || 5)) : e.target.value; });
+    $("#revList").addEventListener("click", (e) => { const d = e.target.closest("[data-rdel]"); if (d && confirm("Supprimer cet avis ?")) { R.splice(+d.dataset.rdel, 1); renderR(); } });
+    $("#revAdd").addEventListener("click", () => { R.unshift({ id: uid("rv"), name: "", productId: "", rating: 5, text: "", verified: false, approved: true, date: today() }); renderR(); });
+    $("#faqList").addEventListener("input", (e) => { const b = e.target.closest("[data-fi]"), k = e.target.dataset.fk; if (b && k) F[+b.dataset.fi][k] = e.target.value; });
+    $("#faqList").addEventListener("click", (e) => { const d = e.target.closest("[data-fdel]"); if (d) { F.splice(+d.dataset.fdel, 1); renderF(); } });
+    $("#faqAdd").addEventListener("click", () => { F.push({ q: "", a: "" }); renderF(); });
+    $("#rfSave").addEventListener("click", () => { DATA.reviews = R.filter((r) => r.name.trim() && r.text.trim()); DATA.faq = F.filter((f) => f.q.trim() && f.a.trim()); saveDraft(); toast("Avis et FAQ enregistrés."); pageTeam(); });
   }
 
   /* --- Radio --- */
@@ -1840,18 +2300,36 @@
           <label><span>Lien de paiement <span class="hint">Stripe, PayPal.me, SumUp…</span></span><input id="st-pay" name="paymentLink" value="${esc(s.paymentLink)}" placeholder="https://"></label></div>
         <label><span>Réception des commandes <span class="hint">optionnel, ex. https://formspree.io/f/xxxx</span></span><input id="st-end" name="orderEndpoint" value="${esc(s.orderEndpoint)}"></label>
         <div class="row"><label><span>Livraison offerte dès (€)</span><input id="st-free" type="number" step="0.01" name="freeShippingFrom" value="${+s.freeShippingFrom}"></label><label><span>Prix de la livraison (€)</span><input id="st-ship" type="number" step="0.01" name="shippingPrice" value="${+s.shippingPrice}"></label></div>
+        <label><span>Texte d'accueil</span><input id="st-hero" name="heroText" value="${esc(s.heroText || "")}"></label>
+        <div class="row3"><label><span>Délai d'expédition</span><input id="st-delay" name="shipDelay" value="${esc(s.shipDelay || "")}"></label><label><span>Jours pour retourner</span><input id="st-ret" type="number" name="returnDays" value="${+s.returnDays || 30}"></label><label><span>Moyens de paiement affichés</span><input id="st-pm" name="paymentMethods" value="${esc(s.paymentMethods || "")}" placeholder="Carte bancaire, PayPal…"></label></div>
         <div class="row"><label><span>Dépôt GitHub</span><input id="st-repo" name="githubRepo" value="${esc(s.githubRepo)}" placeholder="utilisateur/depot"></label><label><span>Branche publiée</span><input id="st-branch" name="githubBranch" value="${esc(s.githubBranch)}"></label></div>
         <button class="btn btn-sm" style="justify-self:start">Enregistrer</button>
-      </form></div>`;
+      </form></div>
+      <div class="box"><h3>Informations légales et réseaux</h3><p>Utilisées dans les mentions légales, les CGV et la politique de confidentialité. Fais relire ces pages avant l'ouverture.</p>
+        <form class="form" id="legalForm">
+          <div class="row"><label><span>Raison sociale</span><input id="lg-co" name="company" value="${esc(s.legal.company || "")}"></label><label><span>Forme juridique et capital</span><input id="lg-form" name="form" value="${esc(s.legal.form || "")}" placeholder="SAS au capital de …"></label></div>
+          <div class="row"><label><span>Adresse du siège</span><input id="lg-addr" name="address" value="${esc(s.legal.address || "")}"></label><label><span>SIRET</span><input id="lg-siret" name="siret" value="${esc(s.legal.siret || "")}"></label></div>
+          <div class="row"><label><span>Directeur de la publication</span><input id="lg-dir" name="director" value="${esc(s.legal.director || "")}"></label><label><span>Médiateur de la consommation</span><input id="lg-med" name="mediator" value="${esc(s.legal.mediator || "")}"></label></div>
+          <label><span>Hébergeur</span><input id="lg-host" name="host" value="${esc(s.legal.host || "")}"></label>
+          <div class="row3"><label><span>Instagram</span><input id="so-ig" name="instagram" value="${esc(s.social.instagram || "")}" placeholder="https://instagram.com/…"></label><label><span>TikTok</span><input id="so-tt" name="tiktok" value="${esc(s.social.tiktok || "")}"></label><label><span>YouTube</span><input id="so-yt" name="youtube" value="${esc(s.social.youtube || "")}"></label></div>
+          <button class="btn btn-sm" style="justify-self:start">Enregistrer</button>
+        </form></div>`;
+    $("#legalForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const f = Object.fromEntries(new FormData(e.target));
+      const { instagram, tiktok, youtube, ...legal } = f;
+      DATA.settings.legal = legal; DATA.settings.social = { instagram, tiktok, youtube };
+      saveDraft(); toast("Informations enregistrées."); pageTeam();
+    });
     $("#setForm").addEventListener("submit", (e) => {
       e.preventDefault();
       const f = Object.fromEntries(new FormData(e.target));
-      f.freeShippingFrom = +f.freeShippingFrom || 0; f.shippingPrice = +f.shippingPrice || 0;
+      f.freeShippingFrom = +f.freeShippingFrom || 0; f.shippingPrice = +f.shippingPrice || 0; f.returnDays = +f.returnDays || 30;
       Object.assign(DATA.settings, f); saveDraft(); toast("Réglages enregistrés."); pageTeam();
     });
   }
 
-  const TABS = { dashboard: tabDashboard, products: tabProducts, specs: tabSpecs, materials: tabMaterials, charter: tabCharter, zones: tabZones, history: tabHistory, people: tabPeople, promos: tabPromos, designs: tabDesigns, radio: tabRadio, orders: tabOrders, team: tabTeam, settings: tabSettings, account: tabAccount };
+  const TABS = { dashboard: tabDashboard, products: tabProducts, specs: tabSpecs, materials: tabMaterials, charter: tabCharter, zones: tabZones, history: tabHistory, people: tabPeople, promos: tabPromos, designs: tabDesigns, reviews: tabReviews, radio: tabRadio, orders: tabOrders, team: tabTeam, settings: tabSettings, account: tabAccount };
 
   /* ================= RADIO ================= */
   const radio = (() => {
@@ -1980,10 +2458,16 @@
     $$("#nav a").forEach((a) => a.classList.toggle("active", a.dataset.route === (page === "zone" ? arg : page)));
     if (!page) pageHome();
     else if (page === "zone") pageZone(arg);
-    else if (page === "boutique") { shopState.g = "all"; pageShop(); }
+    else if (page === "boutique") pageShop("", arg || "");
+    else if (page === "nouveautes") pageShop("", "new");
+    else if (page === "meilleures-ventes") pageShop("", "best");
+    else if (page === "packs") pageShop("", "packs");
     else if (page === "homme") pageShop("homme");
     else if (page === "femme") pageShop("femme");
     else if (page === "enfants") pageShop("enfant");
+    else if (page === "envies") pageWish();
+    else if (page === "contact") pageContact();
+    else if (page === "mentions" || page === "cgv" || page === "confidentialite") pageLegal(page);
     else if (page === "histoire") pageHistoire();
     else if (page === "lequipe") pagePeople();
     else if (page === "matieres") pageMatieres();
@@ -1997,5 +2481,11 @@
 
   applySettings();
   renderCart();
+  renderWishCount();
   route();
+  // Code de bienvenue après quelques secondes (une seule fois par visiteur)
+  setTimeout(() => welcomePopup(false), (+(S().welcome?.delay) || 12) * 1000);
+  // Rappel du panier pour un visiteur qui revient
+  const lastCart = store.get("skx_cart_at", 0);
+  if (cart.length && Date.now() - lastCart > 30 * 60e3) setTimeout(() => { toast("Ton panier t'attend. Finalise ta commande quand tu veux."); }, 2500);
 })();

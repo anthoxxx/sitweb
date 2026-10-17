@@ -9,6 +9,8 @@ Site statique (HTML/CSS/JS, rien à installer). SKX, pensé en 2014 — « Ta fi
 - **Personnalisation** : coloris et dessin au choix, aperçu en direct, supplément par dessin
 - **Promotions** : codes promo pour les proches (70 % max, enregistrés chiffrés), soldes d'hiver et d'été (50 % max), remise par quantité, emballage cadeau
 - **Ventes** : recommandations « Complète la tenue », barre de livraison offerte, « Vus récemment », page Soldes
+- **Conversion** : barre de réassurance, Meilleures ventes / Nouveautés, packs avec remise automatique, ajout rapide au survol, liste d'envies, avis clients (modérés), FAQ, code de bienvenue, « Acheter maintenant », ajout après commande à −10 %, numéro et prénom au dos
+- **Pages** : Notre histoire (blocs histoire, valeurs, mission, équipe, qualité), Contact, Mentions légales, CGV, Confidentialité (champs à compléter dans Réglages)
 - **Marquage** : logo SKX brodé en bas à gauche + étiquette dans le col
 - **Matières** : textiles certifiés et règles du cahier des charges
 - **Radio en fond** : NRJ France et Fun Radio
