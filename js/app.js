@@ -2486,6 +2486,43 @@
   }
   window.addEventListener("hashchange", route);
 
+  /* Traînée du curseur : neige de montagne (couleur de la zone en cours) — souris uniquement */
+  if (matchMedia("(pointer: fine)").matches && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    const cv = document.createElement("canvas"); cv.className = "trail"; cv.setAttribute("aria-hidden", "true");
+    document.body.appendChild(cv);
+    const ctx = cv.getContext("2d");
+    let W = 0, H = 0, dpr = 1, parts = [], running = false, lx = null, ly = null;
+    const size = () => { dpr = Math.min(devicePixelRatio || 1, 2); W = innerWidth; H = innerHeight; cv.width = W * dpr; cv.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); };
+    size(); addEventListener("resize", size);
+    const hex = (h) => { const m = /#?([0-9a-f]{6})/i.exec(h || ""); const n = m ? parseInt(m[1], 16) : 0xecebe6; return [n >> 16, (n >> 8) & 255, n & 255]; };
+    const flake = (x, y, r) => { ctx.beginPath(); for (let i = 0; i < 3; i++) { const a = i * Math.PI / 3; ctx.moveTo(x - Math.cos(a) * r, y - Math.sin(a) * r); ctx.lineTo(x + Math.cos(a) * r, y + Math.sin(a) * r); } ctx.stroke(); };
+    const tick = () => {
+      ctx.clearRect(0, 0, W, H);
+      parts = parts.filter((p) => p.life > 0);
+      for (const p of parts) {
+        p.life -= 1; p.vy += .03; p.x += p.vx + Math.sin(p.ph += .08) * .3; p.y += p.vy;
+        const a = Math.max(0, p.life / p.max) * .9;
+        ctx.fillStyle = ctx.strokeStyle = `rgba(${p.c[0]},${p.c[1]},${p.c[2]},${a})`;
+        if (p.flake) { ctx.lineWidth = 1; flake(p.x, p.y, p.r * 2.2); } else { ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 6.283); ctx.fill(); }
+      }
+      if (parts.length) requestAnimationFrame(tick); else { running = false; ctx.clearRect(0, 0, W, H); }
+    };
+    addEventListener("pointermove", (e) => {
+      if (e.pointerType !== "mouse") return;
+      const x = e.clientX, y = e.clientY;
+      const d = lx === null ? 0 : Math.hypot(x - lx, y - ly); lx = x; ly = y;
+      const n = Math.min(4, Math.ceil(d / 14));
+      const acc = getComputedStyle(document.body).getPropertyValue("--accent").trim();
+      const base = document.body.dataset.zone ? hex(acc) : [236, 235, 230];
+      for (let i = 0; i < n; i++) {
+        if (parts.length > 140) parts.shift();
+        const max = 40 + Math.random() * 30;
+        parts.push({ x: x + (Math.random() - .5) * 8, y: y + (Math.random() - .5) * 8, vx: (Math.random() - .5) * .6, vy: .2 + Math.random() * .5, r: .8 + Math.random() * 1.6, life: max, max, ph: Math.random() * 6, flake: Math.random() < .25, c: Math.random() < .5 ? [255, 255, 255] : base });
+      }
+      if (!running && parts.length) { running = true; requestAnimationFrame(tick); }
+    }, { passive: true });
+  }
+
   applySettings();
   renderCart();
   renderWishCount();
