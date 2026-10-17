@@ -573,12 +573,7 @@ mark { background: rgba(217,164,65,.25); color: var(--text); padding: 0 3px; }
   input:not([type]), input[type="text"], input[type="email"], input[type="search"], input[type="password"], input[type="number"], input[type="tel"], textarea { cursor: text; }
   button:disabled { cursor: not-allowed; }
 }
-.cursor-ring { position: fixed; left: 0; top: 0; width: 30px; height: 30px; margin: -15px 0 0 -15px; border: 1px solid var(--accent); border-radius: 50%; pointer-events: none; z-index: 300; opacity: 0; transition: width .25s, height .25s, margin .25s, opacity .3s, background .25s, border-color .25s; mix-blend-mode: difference; }
-.cursor-ring.on { opacity: .55; }
-.cursor-ring.hover { width: 48px; height: 48px; margin: -24px 0 0 -24px; background: rgba(236,235,230,.08); opacity: .9; }
-.cursor-ring.down { width: 22px; height: 22px; margin: -11px 0 0 -11px; }
-@media (pointer: coarse), (prefers-reduced-motion: reduce) { .cursor-ring { display: none; } }
-
+@media (pointer: coarse), (prefers-reduced-motion: reduce) { 
 /* ---------- Footer ---------- */
 .footer { border-top: 1px solid var(--line); margin-top: 40px; padding: 56px var(--gutter) 24px; }
 .footer-grid { display: grid; grid-template-columns: 1.4fr 1fr 1fr 1.2fr 1.2fr; gap: 32px; max-width: 1320px; margin: 0 auto; }

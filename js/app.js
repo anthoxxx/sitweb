@@ -2481,19 +2481,6 @@
   }
   window.addEventListener("hashchange", route);
 
-  /* Curseur : anneau qui suit le pic de montagne (souris uniquement) */
-  if (matchMedia("(pointer: fine)").matches && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
-    const ring = document.createElement("div"); ring.className = "cursor-ring"; ring.setAttribute("aria-hidden", "true");
-    document.body.appendChild(ring);
-    let x = -100, y = -100, rx = x, ry = y;
-    const HOVER = "a, button, select, summary, label, [role='button'], .card, .swatch, .chip, .thumb";
-    document.addEventListener("pointermove", (e) => { x = e.clientX; y = e.clientY; ring.classList.add("on"); ring.classList.toggle("hover", !!e.target.closest?.(HOVER)); }, { passive: true });
-    document.addEventListener("pointerdown", () => ring.classList.add("down"));
-    document.addEventListener("pointerup", () => ring.classList.remove("down"));
-    document.documentElement.addEventListener("pointerleave", () => ring.classList.remove("on"));
-    (function follow() { rx += (x - rx) * .22; ry += (y - ry) * .22; ring.style.transform = `translate(${rx}px, ${ry}px)`; requestAnimationFrame(follow); })();
-  }
-
   applySettings();
   renderCart();
   renderWishCount();
