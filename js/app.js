@@ -44,8 +44,8 @@
   const UTINT = { streetwear: "#c9c6bd", sport: "#8fb4c9", premiere: "#d4a94f", accessoires: "#a39e93", cool: "#d0876a" };
   const GENDERS = { homme: "Homme", femme: "Femme", enfant: "Enfants", mixte: "Mixte" };
   const SIZES = ["XS", "S", "M", "L", "XL", "2XL", "3XL"];
-  const TYPES = { tshirt: "T-shirt", hoodie: "Hoodie", veste: "Veste", pantalon: "Pantalon", casquette: "Casquette", bonnet: "Bonnet" };
-  const TYPE_CODE = { tshirt: "TS", hoodie: "HD", veste: "JK", pantalon: "PT", casquette: "CP", bonnet: "BN" };
+  const TYPES = { maillot: "Maillot", tshirt: "T-shirt", hoodie: "Hoodie", veste: "Veste", pantalon: "Pantalon", casquette: "Casquette", bonnet: "Bonnet" };
+  const TYPE_CODE = { maillot: "MJ", tshirt: "TS", hoodie: "HD", veste: "JK", pantalon: "PT", casquette: "CP", bonnet: "BN" };
   const MAT_CATEGORIES = ["Tissu", "Bord-côte", "Doublure", "Rembourrage", "Fil à tricoter", "Fil", "Étiquette", "Accessoire", "Emballage"];
   const MAT_UNITS = ["m", "kg", "pièce", "bobine"];
   const CERTS = ["GOTS", "OCS", "GRS", "RCS", "OEKO-TEX 100", "bluesign", "EU Ecolabel", "Fair Wear", "FSC"];
@@ -83,6 +83,8 @@
     d.reviews = Array.isArray(d.reviews) ? d.reviews : [];
     d.faq = Array.isArray(d.faq) ? d.faq : clone(base.faq || []);
     d.story = Object.assign(clone(base.story || {}), d.story || {});
+    d.superfit = Object.assign(clone(base.superfit || { targets: [], steps: [], images: [] }), d.superfit || {});
+    for (const bp of base.products || []) if (!d.products.some((x) => x.id === bp.id) && bp.id === "p-bicolore") d.products.unshift(clone(bp));
     d.textOptions = Object.assign(clone(base.textOptions || { enabled: false }), d.textOptions || {});
     d.settings.welcome = Object.assign({ enabled: false, code: "", percent: 10, delay: 12 }, (base.settings || {}).welcome, d.settings.welcome);
     d.settings.legal = Object.assign({}, (base.settings || {}).legal, d.settings.legal);
@@ -155,6 +157,9 @@
 
   /* ---------- Visuels produits (dessin technique) ---------- */
   const SHAPES = {
+    maillot: { body: "M84 41 Q100 50 116 41 L130 50 L142 70 L142 180 L58 180 L58 70 L70 50 Z",
+      sleeves: ["M84 41 L58 50 Q42 58 38 86 L26 172 L42 176 L56 100 L58 70 L70 50 Z", "M116 41 L142 50 Q158 58 162 86 L174 172 L158 176 L144 100 L142 70 L130 50 Z"],
+      stitch: ["M84 41 L70 50 L58 70", "M116 41 L130 50 L142 70", "M64 98 Q80 140 72 178", "M136 98 Q120 140 128 178", "M58 172 H142", "M28 164 L42 168", "M172 164 L158 168"] },
     tshirt: { body: "M70 42 L50 48 L24 70 L39 95 L58 86 L58 178 L142 178 L142 86 L161 95 L176 70 L150 48 L130 42 Q100 62 70 42 Z", stitch: ["M58 170 H142", "M27 76 L40 98", "M173 76 L160 98", "M74 44 Q100 60 126 44"] },
     hoodie: { body: "M74 44 Q100 16 126 44 L150 52 L176 130 L157 137 L142 96 L142 180 L58 180 L58 96 L43 137 L24 130 L50 52 Z", stitch: ["M82 47 Q100 76 118 47", "M74 140 H126 V164 H74 Z", "M58 170 H142", "M30 124 L44 130", "M170 124 L156 130", "M96 70 L94 96", "M104 70 L106 96"] },
     veste: { body: "M76 40 L124 40 L152 52 L178 132 L159 138 L144 98 L144 180 L56 180 L56 98 L41 138 L22 132 L48 52 Z", stitch: ["M100 46 V180", "M76 40 L100 60 L124 40", "M64 130 H90", "M110 130 H136", "M56 110 H144", "M56 150 H144"] },
@@ -163,10 +168,10 @@
     bonnet: { body: "M56 150 Q56 62 100 62 Q144 62 144 150 Z", stitch: ["M64 80 V150", "M74 70 V150", "M84 64 V150", "M94 62 V150", "M106 62 V150", "M116 64 V150", "M126 70 V150", "M136 80 V150"], extra: '<rect x="52" y="132" width="96" height="30" rx="2" fill="rgba(0,0,0,.18)" stroke="rgba(0,0,0,.45)" stroke-width="1"/>' }
   };
   // Règle de marquage : logo SKX brodé en bas à gauche + étiquette dans le col
-  const LOGO_BL = { tshirt: [70, 168, 7], hoodie: [70, 172, 7], veste: [68, 172, 7], pantalon: [68, 164, 6], casquette: [70, 120, 6], bonnet: [66, 152, 6] };
-  const COLLAR = { tshirt: [94, 47], hoodie: [94, 50], veste: [94, 44] };
+  const LOGO_BL = { maillot: [66, 172, 7], tshirt: [70, 168, 7], hoodie: [70, 172, 7], veste: [68, 172, 7], pantalon: [68, 164, 6], casquette: [70, 120, 6], bonnet: [66, 152, 6] };
+  const COLLAR = { maillot: [94, 43], tshirt: [94, 47], hoodie: [94, 50], veste: [94, 44] };
   // Emplacement du motif personnalisé : [x, y, taille]
-  const DESIGN_AT = { tshirt: [100, 100, 44], hoodie: [100, 104, 38], veste: [122, 88, 22], pantalon: [80, 104, 20], casquette: [101, 100, 28], bonnet: [100, 104, 28] };
+  const DESIGN_AT = { maillot: [100, 100, 40], tshirt: [100, 100, 44], hoodie: [100, 104, 38], veste: [122, 88, 22], pantalon: [80, 104, 20], casquette: [101, 100, 28], bonnet: [100, 104, 28] };
   const BUILTIN_DESIGNS = {
     crete: (x, y, s, c) => `<g fill="none" stroke="${c}" stroke-width="${s / 22}" stroke-linejoin="round"><path d="M${x - s / 2} ${y + s * .22} L${x - s * .26} ${y - s * .06} L${x - s * .12} ${y + s * .08} L${x + s * .06} ${y - s * .24} L${x + s * .24} ${y + s * .02} L${x + s / 2} ${y + s * .22}"/><path d="M${x + s * .06} ${y - s * .24} L${x + s * .0} ${y - s * .14} L${x + s * .12} ${y - s * .14}" stroke-width="${s / 40}"/><line x1="${x - s / 2}" y1="${y + s * .3}" x2="${x + s / 2}" y2="${y + s * .3}"/></g>`,
     gothique: (x, y, s, c) => `<text x="${x}" y="${y + s * .18}" text-anchor="middle" font-family="Pirata One, serif" font-size="${s * .62}" fill="${c}">SKX</text>`,
@@ -185,6 +190,8 @@
     const colorHex = opt.color || p.color;
     const color = /^#[0-9a-f]{6}$/i.test(colorHex) ? colorHex : "#bbbbbb";
     const tint = UTINT[p.zone] || "#888";
+    const c2raw = opt.color2 || (p.colors || []).find((c) => c.hex === colorHex)?.hex2 || color;
+    const color2 = /^#[0-9a-f]{6}$/i.test(c2raw) ? c2raw : color;
     const g = "g" + Math.random().toString(36).slice(2, 8);
     const dark = lum(color) > .5;
     const stitchCol = dark ? "rgba(0,0,0,.35)" : "rgba(255,255,255,.28)";
@@ -207,6 +214,7 @@
       <rect width="200" height="250" fill="${bg}"/><rect width="200" height="250" fill="url(#${g}b)"/>
       <g transform="translate(0,22)">
         <ellipse cx="100" cy="196" rx="58" ry="5" fill="#000" opacity="${light ? .08 : .45}"/>
+        ${(sh.sleeves || []).map((d) => `<path d="${d}" fill="${color2}" stroke="rgba(0,0,0,.55)" stroke-width="1" stroke-linejoin="round"/><path d="${d}" fill="url(#${g}s)"/>`).join("")}
         <path d="${sh.body}" fill="${color}" stroke="rgba(0,0,0,.55)" stroke-width="1" stroke-linejoin="round"/>
         ${sh.extra || ""}
         <path d="${sh.body}" fill="url(#${g}s)"/>
@@ -221,7 +229,11 @@
       </g>
     </svg>`;
   }
-  const productVisual = (p, opt = {}) => (p.image && !opt.custom ? `<img src="${esc(p.image)}" alt="${esc(p.name)}" loading="lazy">` : productSVG(p, opt));
+  const productVisual = (p, opt = {}) => {
+    const ci = opt.color && (p.colors || []).find((c) => c.hex === opt.color)?.image;
+    if (ci && (!opt.design || opt.design === "none")) return `<img src="${esc(ci)}" alt="${esc(p.name)}" loading="lazy">`;
+    return p.image && !opt.custom ? `<img src="${esc(p.image)}" alt="${esc(p.name)}" loading="lazy">` : productSVG(p, opt);
+  };
 
   /* ---------- Prix, soldes, codes promo ---------- */
   const round2 = (n) => Math.round(n * 100) / 100;
@@ -395,7 +407,7 @@
     const ink = lum(color) > .5 ? "#151413" : "#efece4";
     return `<svg viewBox="0 0 200 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Dos personnalisé">
       <rect width="200" height="250" fill="#121211"/>
-      <g transform="translate(0,22)"><path d="${sh.body}" fill="${esc(color)}" stroke="rgba(0,0,0,.55)" stroke-width="1"/>
+      <g transform="translate(0,22)">${(sh.sleeves || []).map((d) => `<path d="${d}" fill="${esc((p.colors || []).find((c) => c.hex === color)?.hex2 || color)}" stroke="rgba(0,0,0,.55)" stroke-width="1"/>`).join("")}<path d="${sh.body}" fill="${esc(color)}" stroke="rgba(0,0,0,.55)" stroke-width="1"/>
       ${name ? `<text x="100" y="80" text-anchor="middle" font-family="Archivo, sans-serif" font-weight="800" font-size="13" letter-spacing="2" fill="${ink}">${esc(String(name).toUpperCase())}</text>` : ""}
       ${number ? `<text x="100" y="${name ? 140 : 128}" text-anchor="middle" font-family="Archivo, sans-serif" font-weight="800" font-size="52" fill="${ink}">${esc(number)}</text>` : ""}</g>
       <text x="12" y="240" font-family="JetBrains Mono, monospace" font-size="6.5" fill="#8f8d85">DOS</text>
@@ -411,7 +423,7 @@
     const colors = p.colors && p.colors.length ? p.colors : [{ name: "Unique", hex: p.color }];
     let color = colors[0], design = "none", number = "", name = "";
     const designs = p.customizable ? (DATA.designs || []).filter((d) => d.enabled) : [];
-    const textOk = p.customizable && TO().enabled && ["tshirt", "hoodie", "veste"].includes(p.type);
+    const textOk = p.customizable && TO().enabled && ["maillot", "tshirt", "hoodie", "veste"].includes(p.type);
     const stock = +p.stock || 0;
     const u = DATA.zones[p.zone];
     const st = specStats(p);
@@ -423,11 +435,12 @@
     const packs = (DATA.packs || []).filter((pk) => (pk.items || []).includes(p.id));
     const revs = reviewsFor(p.id), rt = ratingOf(p.id);
     const benefits = (p.benefits && p.benefits.length ? p.benefits : ["Matière confortable et résistante", "Coupe sportive et moderne", "Logo brodé en bas à gauche", "Idéal pour le sport, le lifestyle et les aventures urbaines", "Entretien facile"]);
-    const pics = [null, ...(p.image ? [p.image] : []), ...(p.images || [])];
+    const colorPhotos = (p.colors || []).some((c) => c.image);
+    const pics = colorPhotos ? [null, "draw"] : [null, ...(p.image ? [p.image] : []), ...(p.images || [])];
     const box = openModal(`<div class="pdp">
       <div class="pdp-media">
         <div class="pdp-img" id="pdpImg"></div>
-        <div class="thumbs" id="thumbs">${pics.map((src, i) => `<button class="thumb ${i ? "" : "active"}" data-pic="${i}" aria-label="Vue ${i + 1}">${src ? `<img src="${esc(src)}" alt="">` : productSVG(p)}</button>`).join("")}<button class="thumb" data-pic="back" id="backThumb" hidden aria-label="Vue dos"></button></div>
+        <div class="thumbs" id="thumbs">${pics.map((src, i) => `<button class="thumb ${i ? "" : "active"}" data-pic="${i}" aria-label="Vue ${i + 1}">${src === "draw" ? productSVG(p) : src ? `<img src="${esc(src)}" alt="">` : productSVG(p)}</button>`).join("")}<button class="thumb" data-pic="back" id="backThumb" hidden aria-label="Vue dos"></button></div>
       </div>
       <div class="pdp-info">
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
@@ -442,7 +455,7 @@
         <div class="price" id="pdpPrice"></div>
         <p class="muted" style="margin:0">${esc(p.description)}</p>
         ${colors.length > 1 ? `<div class="opt"><span class="label">Coloris · <b id="colorName">${esc(color.name)}</b></span>
-          <div class="swatches" id="pdpColors">${colors.map((c, i) => `<button class="swatch ${i ? "" : "active"}" data-c="${i}" style="--c:${esc(c.hex)}" aria-label="${esc(c.name)}" title="${esc(c.name)}"></button>`).join("")}</div></div>` : ""}
+          <div class="swatches" id="pdpColors">${colors.map((c, i) => `<button class="swatch ${i ? "" : "active"}" data-c="${i}" style="--c:${c.hex2 && c.hex2 !== c.hex ? `linear-gradient(135deg, ${esc(c.hex)} 50%, ${esc(c.hex2)} 50%)` : esc(c.hex)}" aria-label="${esc(c.name)}" title="${esc(c.name)}"></button>`).join("")}</div></div>` : ""}
         ${designs.length > 1 ? `<div class="opt"><span class="label">Dessin</span>
           <div class="designs" id="pdpDesigns">${designs.map((d) => `<button class="design ${d.id === "none" ? "active" : ""}" data-d="${esc(d.id)}">${esc(d.name)}${+d.price ? ` <span class="mono">+${money(d.price)}</span>` : ""}</button>`).join("")}</div></div>` : ""}
         ${textOk ? `<div class="opt"><span class="label">Personnalisation du dos</span>
@@ -489,7 +502,7 @@
       const bt = $("#backThumb", box); bt.hidden = !(number || name);
       if (!bt.hidden) bt.innerHTML = backSVG(p, color.hex, number, name);
       if (pic === "back" && bt.hidden) pic = 0;
-      $("#pdpImg", box).innerHTML = pic === "back" ? backSVG(p, color.hex, number, name) : pic ? `<img src="${esc(pics[pic])}" alt="${esc(p.name)}">` : productVisual(p, { color: color.hex, design, custom: true });
+      $("#pdpImg", box).innerHTML = pic === "back" ? backSVG(p, color.hex, number, name) : pics[pic] === "draw" ? productSVG(p, { color: color.hex, design }) : pic ? `<img src="${esc(pics[pic])}" alt="${esc(p.name)}">` : productVisual(p, { color: color.hex, design, custom: !color.image });
       $$(".thumb", box).forEach((t) => t.classList.toggle("active", String(t.dataset.pic) === String(pic)));
       $(".thumb[data-pic='0']", box).innerHTML = productVisual(p, { color: color.hex, design, custom });
     };
@@ -851,6 +864,10 @@
         <div class="section-head"><div><span class="label">Collections</span><h2>Cinq zones</h2><p>Du camp de base au sommet : chaque collection est une étape de la montagne SKX.</p></div></div>
         <div class="zones">${ZONE_IDS.map((u, i) => zoneCard(u, i === 0)).join("")}</div>
       </div></section>
+      ${DATA.superfit?.name ? `<section class="section" style="padding-top:0"><div class="container"><a class="sf-teaser" href="#/superfit">
+        <div class="sf-teaser-img"><img src="${esc((DATA.superfit.images || [])[0] || "")}" alt="" loading="lazy"></div>
+        <div style="display:grid;gap:12px;align-content:center"><span class="label">Projet de recherche · gamme Sport</span><h2 class="teaser-title">${esc(DATA.superfit.name)}</h2><p class="muted" style="margin:0">${esc(DATA.superfit.tagline)} Moins de 60 g, fibres végétales, texture inspirée du requin mako.</p><span class="go label">Découvrir le projet →</span></div>
+      </a></div></section>` : ""}
       ${(DATA.packs || []).length ? `<section class="section" style="padding-top:0"><div class="container">
         <div class="section-head"><div><span class="label">Packs</span><h2>La tenue complète</h2><p>Prends le pack, la remise s'applique toute seule dans le panier.</p></div></div>
         <div class="packs">${DATA.packs.map(packCard).join("")}</div>
@@ -907,6 +924,7 @@
         </div>
       </section>
       <section class="section" style="padding-top:32px"><div class="container">
+        ${id === "sport" && DATA.superfit?.name ? `<a class="sf-banner" href="#/superfit"><span class="label">En développement</span><b>${esc(DATA.superfit.name)}</b><span class="muted">Le maillot de moins de 60 g en fibres végétales. Découvre le projet →</span></a>` : ""}
         <div id="zoneShop"></div>
         <div class="u-switch"><span class="label" style="align-self:center;margin-right:8px">Autres zones</span>${ZONE_IDS.filter((x) => x !== id).map((x) => `<a class="chip" href="#/zone/${x}"><span class="sw sw-${x}"></span>${esc(DATA.zones[x].name)}</a>`).join("")}</div>
       </div></section>`;
@@ -917,7 +935,7 @@
   /* ---------- Boutique ---------- */
   const SECTIONS = [["all", "Tout"], ["new", "Nouveautés"], ["best", "Meilleures ventes"], ["promo", "Promotions"], ["hauts", "Hauts"], ["bas", "Bas"], ["acc", "Accessoires"], ["limited", "Éditions limitées"], ["packs", "Packs"]];
   const inSection = (p, sec) => ({
-    all: true, new: p.isNew, best: p.bestseller, promo: !!priceInfo(p).was, hauts: ["tshirt", "hoodie", "veste"].includes(p.type),
+    all: true, new: p.isNew, best: p.bestseller, promo: !!priceInfo(p).was, hauts: ["maillot", "tshirt", "hoodie", "veste"].includes(p.type),
     bas: p.type === "pantalon", acc: ["casquette", "bonnet"].includes(p.type) || p.zone === "accessoires", limited: p.zone === "premiere"
   })[sec];
   const shopState = { sec: "all", g: "all", u: "all", size: "", color: "", max: 0, stock: false, q: "", sort: "default" };
@@ -992,6 +1010,70 @@
     $("#shopMax", el).addEventListener("input", (e) => { st.max = +e.target.value; sync(); render(); });
     $("#shopStock", el).addEventListener("change", (e) => { st.stock = e.target.checked; sync(); render(); });
     render();
+  }
+
+  /* ---------- Projet SKX SuperFit (gamme Sport) ---------- */
+  const SF_STATUS = { "Faisable": "ok", "En partie faisable": "mid", "À valider": "mid", "Recherche": "rd", "Provisoire": "rd" };
+  function pageSuperfit() {
+    const F = DATA.superfit;
+    document.body.dataset.zone = "sport";
+    app.innerHTML = `
+      <section class="u-hero sf-hero">
+        ${sceneDiv("sport")}
+        <div class="container u-hero-content">
+          <div class="u-meta"><span class="label">Gamme Sport · projet de recherche</span><span class="label">Objectif < 60 g</span></div>
+          <h1>${esc(F.name)}</h1>
+          <div class="tagline">${esc(F.tagline)}</div>
+          <p class="desc">${esc(F.intro)}</p>
+        </div>
+      </section>
+      <section class="section" style="padding-top:32px"><div class="container">
+        <div class="sf-kpis">
+          <div><b>40 g</b><span class="label">objectif de poids</span></div>
+          <div><b>3</b><span class="label">gains visés : endurance, récupération, aéro</span></div>
+          <div><b>100 %</b><span class="label">fibres végétales visées</span></div>
+          <div><b>0</b><span class="label">déchet en fin de vie</span></div>
+        </div>
+      </div></section>
+      <section class="section" style="padding-top:0"><div class="container">
+        <div class="section-head"><div><span class="label">Cahier des charges</span><h2>Ce qu'on vise</h2><p>Chaque objectif avec son niveau de faisabilité aujourd'hui. On avance étape par étape, sans promettre ce qu'on n'a pas encore testé.</p></div></div>
+        <div class="sf-grid">${F.targets.map((t) => `<article class="sf-card"><div style="display:flex;justify-content:space-between;gap:10px;align-items:start"><span class="label">${esc(t.label)}</span><span class="sf-status sf-${SF_STATUS[t.status] || "mid"}">${esc(t.status)}</span></div><h3>${esc(t.value)}</h3><p>${esc(t.note)}</p></article>`).join("")}</div>
+      </div></section>
+      <section class="section" style="padding-top:0"><div class="container">
+        <div class="section-head"><div><span class="label">Inspiration</span><h2>Le requin et la loutre</h2><p>La peau du requin mako est couverte de micro-écailles qui réduisent les turbulences. La fourrure de la loutre piège une fine couche d'air qui isole sans peser. SuperFit veut reproduire les deux en maille végétale.</p></div></div>
+        <div class="sf-skin" aria-hidden="true"><svg viewBox="0 0 600 120" preserveAspectRatio="none"><defs><pattern id="denticle" width="24" height="16" patternUnits="userSpaceOnUse" patternTransform="skewX(-18)"><path d="M2 14 Q6 2 12 1 Q18 2 22 14 Z" fill="none" stroke="currentColor" stroke-width="1"/><path d="M8 13 L9 5 M12 13 V3 M16 13 L15 5" stroke="currentColor" stroke-width=".6"/></pattern></defs><rect width="600" height="120" fill="url(#denticle)"/></svg></div>
+      </div></section>
+      <section class="section" style="padding-top:0"><div class="container">
+        <div class="section-head"><div><span class="label">Premières maquettes</span><h2>La base : le maillot bicolore</h2><p>Coupe raglan, coutures plates apparentes, logo brodé en bas à gauche. Disponible dès maintenant en version streetwear.</p></div><button class="btn btn-ghost btn-sm" data-product="p-bicolore">Voir le Maillot Bicolore</button></div>
+        <div class="sf-gallery">${(F.images || []).map((src) => `<figure><img src="${esc(src)}" alt="Maquette maillot SKX" loading="lazy"></figure>`).join("")}</div>
+        <p class="label" style="margin-top:10px">Visuels de maquette générés par IA, non contractuels.</p>
+      </div></section>
+      <section class="section" style="padding-top:0"><div class="container split">
+        <div><span class="label">Les étapes</span><ol class="sf-steps">${(F.steps || []).map((x) => `<li>${esc(x)}</li>`).join("")}</ol></div>
+        <div class="box" style="display:grid;gap:14px;align-content:start"><span class="label">Liste d'attente</span><h3 style="margin:0;font-size:22px">Sois parmi les premiers à le porter.</h3>
+          <p class="muted" style="margin:0">Laisse ton e-mail : on te prévient à chaque prototype, et tu auras accès à la première série en avant-première.</p>
+          <form id="sfForm" style="display:flex;gap:8px;flex-wrap:wrap"><input class="input" id="sfEmail" type="email" required placeholder="ton@email.fr" style="flex:1;min-width:200px"><select class="input" id="sfSport" aria-label="Ton sport"><option>Vélo</option><option>Ski</option><option>Course</option><option>Trail</option><option>Autre</option></select><button class="btn">Je m'inscris</button></form></div>
+      </div></section>`;
+    mountScenes();
+    $("#sfForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = $("#sfEmail").value, sport = $("#sfSport").value;
+      const list = store.get("skx_superfit", []); list.push({ email, sport, date: today() }); store.set("skx_superfit", list);
+      await sendToTeam({ type: "liste SuperFit", email, sport }, "Liste d'attente SKX SuperFit");
+      e.target.outerHTML = `<p style="margin:0">C'est noté. On te prévient dès le premier prototype.</p>`;
+    });
+  }
+  function superfitSheetHTML() {
+    const F = DATA.superfit;
+    return `<div class="sheet">
+      <div class="head"><div><span class="label">Cahier des charges · gamme Sport</span><h1>${esc(F.name)}</h1><div class="label" style="margin-top:6px">Version du ${new Date().toLocaleDateString("fr-FR")}</div></div><img src="assets/logo-skx-small.png" alt="SKX"></div>
+      <p>${esc(F.intro)}</p>
+      <h4>Objectifs</h4>
+      <table><thead><tr><th>Critère</th><th>Objectif</th><th>Faisabilité</th><th>Piste technique</th></tr></thead><tbody>${F.targets.map((t) => `<tr><td>${esc(t.label)}</td><td>${esc(t.value)}</td><td>${esc(t.status)}</td><td>${esc(t.note)}</td></tr>`).join("")}</tbody></table>
+      <h4>Contraintes SKX</h4><p>Logo brodé en bas à gauche et étiquette dans le col · fibres conformes au cahier des charges matières · fabrication Europe / Méditerranée.</p>
+      <h4>Étapes</h4><ol>${(F.steps || []).map((x) => `<li>${esc(x)}</li>`).join("")}</ol>
+      <h4>Validation</h4><table><tbody><tr><th style="width:150px">Bureau d'études</th><td style="height:50px"></td><th style="width:150px">SKX</th><td></td></tr></tbody></table>
+    </div>`;
   }
 
   function pageWish() {
@@ -2015,7 +2097,23 @@
           <button class="btn btn-ghost btn-sm" id="chAdd">Ajouter une exigence</button>
           <button class="btn btn-sm" id="chSave">Enregistrer</button>
           <button class="btn btn-ghost btn-sm" id="chPrint" data-ro-ok>Imprimer le cahier des charges</button>
-        </div></div>`;
+        </div></div>
+      <div class="box"><h3>Projet ${esc(DATA.superfit.name || "SuperFit")}</h3><p>Une ligne par objectif : <span class="mono">Critère | Objectif | Statut | Piste</span>. Statuts : Faisable, En partie faisable, À valider, Recherche, Provisoire.</p>
+        <form class="form" id="sfAdm">
+          <div class="row"><label><span>Nom</span><input name="name" value="${esc(DATA.superfit.name || "")}"></label><label><span>Accroche</span><input name="tagline" value="${esc(DATA.superfit.tagline || "")}"></label></div>
+          <label><span>Présentation</span><textarea name="intro">${esc(DATA.superfit.intro || "")}</textarea></label>
+          <label><span>Objectifs</span><textarea name="targets" style="min-height:200px;font-family:var(--mono);font-size:12px">${esc((DATA.superfit.targets || []).map((t) => [t.label, t.value, t.status, t.note].join(" | ")).join("\n"))}</textarea></label>
+          <label><span>Étapes <span class="hint">une par ligne</span></span><textarea name="steps">${esc((DATA.superfit.steps || []).join("\n"))}</textarea></label>
+          <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-sm">Enregistrer</button><button type="button" class="btn btn-ghost btn-sm" id="sfPrint" data-ro-ok>Imprimer le cahier des charges SuperFit</button><a class="btn btn-ghost btn-sm" href="#/superfit" data-ro-ok>Voir la page</a></div>
+        </form></div>`;
+    $("#sfPrint").addEventListener("click", () => printSheet(superfitSheetHTML()));
+    $("#sfAdm").addEventListener("submit", (e) => {
+      e.preventDefault(); const f = Object.fromEntries(new FormData(e.target));
+      DATA.superfit = Object.assign(DATA.superfit, { name: f.name.trim(), tagline: f.tagline.trim(), intro: f.intro.trim(),
+        targets: f.targets.split("\n").map((l) => l.split("|").map((x) => x.trim())).filter((a) => a[0]).map(([label, value = "", status = "À valider", note = ""]) => ({ label, value, status, note })),
+        steps: f.steps.split("\n").map((x) => x.trim()).filter(Boolean) });
+      saveDraft(); toast("Projet enregistré."); pageTeam();
+    });
     const render = () => {
       $("#chRules").innerHTML = ch.rules.map((r, i) => `<div class="comp-row" style="grid-template-columns:160px 1fr auto auto" data-i="${i}">
         <input class="input" data-k="cat" value="${esc(r.cat)}" placeholder="Catégorie" aria-label="Catégorie">
@@ -2704,7 +2802,7 @@
     const h = location.hash.replace(/^#\/?/, "");
     window.SKXWeather.destroyAll();
     document.body.dataset.zone = "";
-    closeModal();
+    closeModal(); closeCart();
     const [page, arg] = h.split("/");
     $$("#nav a").forEach((a) => a.classList.toggle("active", a.dataset.route === (page === "zone" ? arg : page)));
     if (!page) pageHome();
@@ -2718,6 +2816,7 @@
     else if (page === "enfants") pageShop("enfant");
     else if (page === "envies") pageWish();
     else if (page === "compte") pageAccount();
+    else if (page === "superfit") pageSuperfit();
     else if (page === "contact") pageContact();
     else if (page === "mentions" || page === "cgv" || page === "confidentialite") pageLegal(page);
     else if (page === "histoire") pageHistoire();

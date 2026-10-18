@@ -11,6 +11,8 @@ Site statique (HTML/CSS/JS, rien à installer). SKX, pensé en 2014 — « Ta fi
 - **Ventes** : recommandations « Complète la tenue », barre de livraison offerte, « Vus récemment », page Soldes
 - **Conversion** : barre de réassurance, Meilleures ventes / Nouveautés, packs avec remise automatique, ajout rapide au survol, liste d'envies, avis clients (modérés), FAQ, code de bienvenue, « Acheter maintenant », ajout après commande à −10 %, numéro et prénom au dos
 - **Pages** : Notre histoire (blocs histoire, valeurs, mission, équipe, qualité), Contact, Mentions légales, CGV, Confidentialité (champs à compléter dans Réglages)
+- **Projet SKX SuperFit** (#/superfit) : cahier des charges du maillot de sport < 60 g en fibres végétales, faisabilité par objectif, liste d'attente ; éditable et imprimable dans Espace équipe → Cahier des charges
+- **Maillot Bicolore** : premier maillot raglan (vert/corail, bleu/noir, blanc) avec photos de maquette
 - **Marquage** : logo SKX brodé en bas à gauche + étiquette dans le col
 - **Matières** : textiles certifiés et règles du cahier des charges
 - **Radio en fond** : 21 stations (NRJ, Fun Radio, Skyrock, Mouv', FIP, radios ici des 4 coins de la France, BBC, KEXP, triple j…), groupées par région, boutons station précédente/suivante

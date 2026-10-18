@@ -20,7 +20,7 @@
   /* Ambiances : ciel, plans de montagne (du plus loin au plus proche), lumière, particules */
   const MOODS = {
     // nuit claire, neige fine
-    streetwear: { sky: ["#040507", "#10161c", "#1e2830"], far: [92, 104, 116], near: [8, 10, 12], rim: [220, 230, 240], rimA: .3, fog: [150, 165, 178], fogA: .1, seed: 42, peaks: .44, glow: null, parts: "snow" },
+    streetwear: { sky: ["#040507", "#10161c", "#1e2830"], far: [92, 104, 116], near: [8, 10, 12], rim: [220, 230, 240], rimA: .3, fog: [150, 165, 178], fogA: .1, seed: 42, peaks: .44, glow: null, parts: "snow", city: true },
     // aube froide, vent de neige
     sport: { sky: ["#0a1219", "#24394a", "#7d98a8"], far: [120, 142, 158], near: [10, 16, 22], rim: [235, 245, 255], rimA: .45, fog: [190, 210, 222], fogA: .16, seed: 7, peaks: .5, glow: { x: .78, y: .58, c: [255, 236, 214], a: .35, r: .5 }, parts: "wind" },
     // heure dorée sur le sommet
@@ -68,6 +68,23 @@
       const f = ctx.createLinearGradient(0, fy, 0, base + h * .1);
       f.addColorStop(0, rgb(M.fog, 0)); f.addColorStop(1, rgb(M.fog, M.fogA * (1 - t * .7)));
       ctx.fillStyle = f; ctx.fillRect(0, fy, w, base + h * .1 - fy);
+    }
+    if (M.city) {
+      // la ville au pied de la montagne : silhouettes d'immeubles et fenêtres allumées
+      const rc = seeded(M.seed + 7), base = h;
+      const halo = ctx.createLinearGradient(0, h * .7, 0, h);
+      halo.addColorStop(0, "rgba(255,190,110,0)"); halo.addColorStop(1, "rgba(255,190,110,.16)");
+      ctx.fillStyle = halo; ctx.fillRect(0, h * .7, w, h * .3);
+      let x = -10;
+      while (x < w + 10) {
+        const bw = 14 + rc() * 38, bh = h * (.05 + rc() * rc() * .2);
+        ctx.fillStyle = "#06080a"; ctx.fillRect(x, base - bh, bw, bh); ctx.fillStyle = "rgba(160,180,200,.12)"; ctx.fillRect(x, base - bh, bw, 1);
+        if (rc() < .25) ctx.fillRect(x + bw * .45, base - bh - 10 - rc() * 14, 1.5, 12);
+        for (let wy = base - bh + 5; wy < base - 4; wy += 6) for (let wx = x + 3; wx < x + bw - 3; wx += 5) {
+          if (rc() < .22) { ctx.fillStyle = rc() < .8 ? `rgba(255,${190 + rc() * 40 | 0},120,${.55 + rc() * .45})` : `rgba(170,210,255,${.4 + rc() * .4})`; ctx.fillRect(wx, wy, 2, 2.4); }
+        }
+        x += bw + rc() * 3;
+      }
     }
     if (M.lake) {
       const y0 = h * .8;

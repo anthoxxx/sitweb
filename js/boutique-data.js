@@ -470,9 +470,131 @@ window.SKX_DATA = {
       "unit": "pièce",
       "stock": 800,
       "notes": "Embouts métal sans nickel."
+    },
+    {
+      "id": "m-techjersey",
+      "name": "Jersey technique recyclé 140",
+      "category": "Tissu",
+      "composition": "92 % polyester recyclé, 8 % élasthanne",
+      "weight": 140,
+      "certifications": [
+        "GRS",
+        "OEKO-TEX 100"
+      ],
+      "supplier": "À définir",
+      "origin": "Italie",
+      "price": 9.5,
+      "unit": "m",
+      "stock": 0,
+      "notes": "Maille séchage rapide, zones aérées sous les bras. Fournisseur à confirmer."
+    },
+    {
+      "id": "m-fil-contraste",
+      "name": "Fil de surpiqûre contrasté",
+      "category": "Fil",
+      "composition": "100 % polyester recyclé",
+      "weight": null,
+      "certifications": [
+        "GRS"
+      ],
+      "supplier": "Linhas Porto",
+      "origin": "Portugal",
+      "price": 3.4,
+      "unit": "bobine",
+      "stock": 0,
+      "notes": "Coutures plates (flatlock) visibles, coloris assorti aux manches."
     }
   ],
   "products": [
+    {
+      "id": "p-bicolore",
+      "name": "Maillot Bicolore",
+      "zone": "streetwear",
+      "gender": "homme",
+      "type": "maillot",
+      "color": "#2e8b57",
+      "colors": [
+        {
+          "name": "Vert / Corail",
+          "hex": "#2e8b57",
+          "hex2": "#e07a6c",
+          "image": "assets/produits/maillot-vert-corail.jpg"
+        },
+        {
+          "name": "Bleu / Noir",
+          "hex": "#1f6f9f",
+          "hex2": "#1b1b1b",
+          "image": "assets/produits/maillot-bleu-noir.jpg"
+        },
+        {
+          "name": "Blanc",
+          "hex": "#f2f2f0",
+          "hex2": "#e9e9e6",
+          "image": "assets/produits/maillot-blanc.jpg"
+        }
+      ],
+      "price": 49,
+      "oldPrice": null,
+      "sizes": [
+        "XS",
+        "S",
+        "M",
+        "L",
+        "XL",
+        "2XL",
+        "3XL"
+      ],
+      "stock": 30,
+      "image": "assets/produits/maillot-vert-corail.jpg",
+      "images": [
+        "assets/produits/maillot-bleu-noir.jpg",
+        "assets/produits/maillot-blanc.jpg"
+      ],
+      "featured": true,
+      "isNew": true,
+      "bestseller": false,
+      "customizable": false,
+      "description": "Maillot manches longues raglan, coupe près du corps. Manches contrastées, coutures plates apparentes qui suivent le mouvement, logo SKX brodé en bas à gauche.",
+      "fitTip": "Coupe près du corps. Pour un tombé plus ample, prends une taille au-dessus.",
+      "benefits": [
+        "Coupe raglan : liberté totale des épaules",
+        "Coutures plates apparentes, sans frottement",
+        "Maille technique légère, séchage rapide",
+        "Logo SKX brodé en bas à gauche, étiquette dans le col",
+        "Du sport à la rue"
+      ],
+      "spec": {
+        "status": "Prototype",
+        "madeIn": "Portugal",
+        "workshop": "À définir",
+        "construction": "Manches raglan, coutures plates (flatlock) en fil contrasté, découpes latérales galbées, zones aérées sous les bras.",
+        "finishing": "Logo SKX brodé en bas à gauche. Étiquette SKX dans le col.",
+        "care": "Lavage 30 °C, pas de sèche-linge.",
+        "notes": "Base streetwear du futur maillot SKX SuperFit.",
+        "components": [
+          {
+            "role": "Corps et manches",
+            "materialId": "m-techjersey",
+            "qty": 1.2
+          },
+          {
+            "role": "Col",
+            "materialId": "m-ribcote",
+            "qty": 0.05
+          },
+          {
+            "role": "Coutures",
+            "materialId": "m-fil-contraste",
+            "qty": 0.15
+          },
+          {
+            "role": "Étiquette",
+            "materialId": "m-etiquette",
+            "qty": 1
+          }
+        ]
+      }
+    },
     {
       "id": "p-sommet",
       "name": "Hoodie Sommet",
@@ -2012,6 +2134,74 @@ window.SKX_DATA = {
       "Détails pensés pour durer",
       "Expérience client simple et fluide",
       "Style sport, culture, aventure"
+    ]
+  },
+  "superfit": {
+    "name": "SKX SuperFit",
+    "tagline": "Le maillot de sport le plus léger, le plus confortable et le plus rapide qu'on puisse faire.",
+    "intro": "Un projet de recherche SKX pour la gamme Sport : un maillot qui fait gagner en endurance, en récupération et en aérodynamisme, en fibres végétales, avec une seconde vie complète.",
+    "targets": [
+      {
+        "label": "Poids adulte",
+        "value": "< 60 g · objectif 40 g",
+        "status": "À valider",
+        "note": "Plus léger que la plupart des maillots pros (souvent 80 à 120 g). Il faut une maille ultra-fine (35 à 50 g/m²), tricotée sans coutures."
+      },
+      {
+        "label": "Fibres",
+        "value": "100 % végétales, hypoallergéniques",
+        "status": "En partie faisable",
+        "note": "Lin et chanvre seuls sont trop raides et gardent l'eau. Piste : ramie et lyocell très fins côté peau, lin ou chanvre en renfort, quelques % d'élasthanne biosourcé pour l'élasticité."
+      },
+      {
+        "label": "Texture aérodynamique",
+        "value": "Inspirée du requin mako et de la fourrure de loutre",
+        "status": "Recherche",
+        "note": "Micro-reliefs (« riblets ») tricotés ou imprimés en relief. Gain mesurable surtout au-delà de 30 km/h : vélo, ski, sprint en pointe. À valider en soufflerie."
+      },
+      {
+        "label": "Élasticité par zones",
+        "value": "Les zones changent selon l'effort",
+        "status": "Recherche",
+        "note": "Faisable aujourd'hui : compression différente par zone grâce au tricot. Une maille qui réagit vraiment à l'effort demande des fibres à mémoire de forme, encore expérimentales."
+      },
+      {
+        "label": "Endurance et récupération",
+        "value": "Compression graduée bras et torse",
+        "status": "Faisable",
+        "note": "Compression légère et ciblée (muscles stabilisateurs), coutures sans frottement, régulation de la chaleur."
+      },
+      {
+        "label": "Séchage",
+        "value": "Rapide malgré les fibres végétales",
+        "status": "À valider",
+        "note": "Structure double face : lyocell côté peau qui évacue, maille ajourée aux zones de chaleur (dos, aisselles)."
+      },
+      {
+        "label": "Marquage",
+        "value": "Logo brodé en bas à gauche + col",
+        "status": "Faisable",
+        "note": "Broderie ultra-fine ou transfert d'environ 1 g pour tenir l'objectif de poids."
+      },
+      {
+        "label": "Fin de vie",
+        "value": "Retour fabricant, fibres réutilisées",
+        "status": "Provisoire",
+        "note": "Un maillot mono-matière se recycle beaucoup mieux. Programme de reprise à définir avec le fabricant."
+      }
+    ],
+    "steps": [
+      "Trouver un centre technique textile et un tricoteur sans couture (tricot circulaire 3D)",
+      "Prototype 1 : maille végétale fine, mesure du poids et du confort",
+      "Prototype 2 : zones de compression et micro-reliefs",
+      "Tests en soufflerie et avec un panel d'athlètes (vélo, ski, course)",
+      "Programme de reprise en fin de vie",
+      "Petite série « 1ère classe » numérotée"
+    ],
+    "images": [
+      "assets/produits/maillot-vert-corail.jpg",
+      "assets/produits/maillot-bleu-noir.jpg",
+      "assets/produits/maillot-blanc.jpg"
     ]
   }
 };
