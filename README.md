@@ -13,6 +13,7 @@ Site statique (HTML/CSS/JS, rien à installer). SKX, pensé en 2014 — « Ta fi
 - **Pages** : Notre histoire (blocs histoire, valeurs, mission, équipe, qualité), Contact, Mentions légales, CGV, Confidentialité (champs à compléter dans Réglages)
 - **Projet SKX SuperFit** (#/superfit) : cahier des charges du maillot de sport < 60 g en fibres végétales, faisabilité par objectif, liste d'attente ; éditable et imprimable dans Espace équipe → Cahier des charges
 - **Maillot Bicolore** : premier maillot raglan (vert/corail, bleu/noir, blanc) avec photos de maquette
+- **Motion design** (`js/motion.js`) : apparitions au défilement, titres mot à mot, logo avec reflet doré, parallaxe des montagnes, transition de page en ligne de crête, cartes inclinables, boutons aimantés, altimètre de défilement (0 → 4 808 m), compteurs animés, en-tête qui se cache en descendant. Désactivé si l'appareil demande moins d'animations.
 - **Marquage** : logo SKX brodé en bas à gauche + étiquette dans le col
 - **Matières** : textiles certifiés et règles du cahier des charges
 - **Radio en fond** : 21 stations (NRJ, Fun Radio, Skyrock, Mouv', FIP, radios ici des 4 coins de la France, BBC, KEXP, triple j…), groupées par région, boutons station précédente/suivante
